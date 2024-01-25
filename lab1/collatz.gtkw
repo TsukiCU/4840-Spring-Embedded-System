@@ -1,0 +1,25 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Sat Jan  8 23:39:06 2022
+[*]
+[dumpfile] "/mnt/sedwards/svn/classes/2022/4840-spring/lab1/collatz.vcd"
+[dumpfile_mtime] "Sat Jan  8 23:33:47 2022"
+[dumpfile_size] 1519
+[savefile] "/mnt/sedwards/svn/classes/2022/4840-spring/lab1/collatz.gtkw"
+[timestart] 0
+[size] 1125 353
+[pos] -1 -1
+*-6.859459 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[sst_width] 233
+[signals_width] 104
+[sst_expanded] 1
+[sst_vpaned_height] 58
+@28
+TOP.clk
+TOP.go
+@24
+TOP.n[31:0]
+TOP.dout[31:0]
+TOP.done
+[pattern_trace] 1
+[pattern_trace] 0

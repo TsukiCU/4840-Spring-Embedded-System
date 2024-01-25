@@ -1,0 +1,48 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Sun Jan  9 21:10:30 2022
+[*]
+[dumpfile] "/mnt/sedwards/svn/classes/2022/4840-spring/lab1-solutions/range.vcd"
+[dumpfile_mtime] "Sun Jan  9 20:35:08 2022"
+[dumpfile_size] 21923
+[savefile] "/mnt/sedwards/svn/classes/2022/4840-spring/lab1-solutions/range.gtkw"
+[timestart] 0
+[size] 1229 428
+[pos] 656 310
+*-7.000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] TOP.
+[treeopen] TOP.range.
+[sst_width] 233
+[signals_width] 118
+[sst_expanded] 1
+[sst_vpaned_height] 84
+@28
+TOP.clk
+TOP.go
+@24
+TOP.start[31:0]
+@28
+TOP.done
+@24
+TOP.count[15:0]
+@200
+-
+@28
+TOP.range.running
+@24
+TOP.range.num[3:0]
+@28
+TOP.range.we
+@24
+TOP.range.din[15:0]
+@200
+-
+@28
+TOP.range.cgo
+@24
+TOP.range.n[31:0]
+TOP.range.c1.dout[31:0]
+@28
+TOP.range.cdone
+[pattern_trace] 1
+[pattern_trace] 0
