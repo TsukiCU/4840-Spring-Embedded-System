@@ -6,32 +6,23 @@ module collatz(
     output logic        done   // True when dout reaches 1
 );
 
-    logic [31:0] current;
-
-    logic computation_done;
-
-    // Assign the output signals to the internal state variables.
-    assign dout = current;
-    assign done = computation_done;
-
-    // Sequential logic to perform the Collatz conjecture algorithm.
+    /* triggered by rising edge */
     always_ff @(posedge clk) begin
         if (go) begin
             // Reset the state and start the computation.
-            current <= n;
-            computation_done <= 1'b0;
-        end else if (current != 32'd1 && !computation_done) begin
-            // Perform the Collatz conjecture computation.
-            if (current[0] == 1'b0) begin // Check if even
-                current <= current >> 1; // Divide by 2
+            dout <= n;
+            done <= 1'b0;
+        end else if (dout != 32'd1 && !done) begin
+            // core logic of Collatz conjecture.
+            if (dout[0] == 1'b0) begin
+                dout <= dout >> 1;
             end else begin
-                current <= (current * 3) + 1; // Multiply by 3 and add 1
+                dout <= (dout * 3) + 1;
             end
         end
 
-        // Check if the current value has reached 1.
-        if (current == 32'd1) begin
-            computation_done <= 1'b1; // Assert 'done' when computation is complete.
+        if (dout == 32'd1) begin
+            done <= 1'b1;
         end
     end
 

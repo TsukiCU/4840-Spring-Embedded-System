@@ -27,7 +27,7 @@ int main(int argc, const char ** argv, const char ** env) {
 
   std::cout << dut->n; // Print the starting value of the sequence
 
-  bool last_clk = true;
+  bool last_clk = true;  // record the state of the last clk, this is for detecting rising edge.
   int time;
   for (time = 0 ; time < 10000 ; time += 10) {
     dut->clk = ((time % 20) >= 10) ? 1 : 0; // Simulate a 50 MHz clock
