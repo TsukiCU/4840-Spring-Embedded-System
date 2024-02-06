@@ -1,5 +1,3 @@
-// verilator lint_off UNUSED
-
 module range
    #(parameter
      RAM_WORDS = 16,            // Number of counts to store in RAM
@@ -16,17 +14,17 @@ module range
    logic               running;
    logic [15:0]        din;
    logic               we;
-   logic [31:0]        dummy_dout; // Dummy variable for dout
+   // verilator lint_off UNUSED
+   logic [31:0]        dummy_dout; // Dummy variable for dout. Put this here to make the stupid verilator happy.
+   // verilator lint_on UNUSED
    logic [15:0]        mem[RAM_WORDS-1:0]; // The RAM
 
-   // Instantiate the Collatz iterator with dummy_dout for dout
    collatz c1(.clk(clk),
               .go(cgo),
               .n(n),
               .dout(dummy_dout),
               .done(cdone));
 
-   // Logic for managing the iteration process and storing the results in mem
    always_ff @(posedge clk) begin
       if (go && !running) begin
          running <= 1;
@@ -40,31 +38,29 @@ module range
          if (cdone) begin
             we <= 1; // Enable write for a single cycle
             if (we) begin
-               mem[num] <= din; // Store the iteration count
-               if (num == RAM_WORDS[RAM_ADDR_BITS-1:0]-1) begin
+               mem[num] <= din;
+               if ({28'b0, num} == (RAM_WORDS-1)) begin
                   running <= 0;
                   done <= 1; // Pulse done signal to indicate completion
                   we <= 0; // Disable write after storing the last value
                end else begin
                   num <= num + 1;
-                  n <= n + 1; // Move to the next number
-                  din <= 0; // Reset iteration count for the next number
-                  cgo <= 1; // Start next Collatz iteration
+                  n <= n + 1;
+                  din <= 0;
+                  cgo <= 1;
                end
             end
          end else if (we) begin
-            we <= 0; // Disable write after one cycle
+            we <= 0;
          end else if (!cgo && !cdone) begin
-            din <= din + 1; // Increment din until cdone is asserted
+            din <= din + 1;
          end
       end
    end
 
-   // Logic for reading from mem when done is asserted and go is not
    always_ff @(posedge clk) begin
       if (done) begin
-         // Use start as the address to read from mem when done is asserted
-         count <= mem[start[RAM_ADDR_BITS-1:0]]; // Correctly read from RAM
+         count <= mem[start[RAM_ADDR_BITS-1:0]];
       end
    end
 endmodule

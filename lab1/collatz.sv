@@ -21,7 +21,7 @@ module collatz(
             end
         end
 
-        if (dout == 32'd1) begin
+        if (dout == 32'd2) begin
             done <= 1'b1;
         end
     end

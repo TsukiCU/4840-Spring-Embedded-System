@@ -1,3 +1,4 @@
+
 module range
    #(parameter
      RAM_WORDS = 16,            // Number of counts to store in RAM
@@ -17,7 +18,8 @@ module range
    // verilator lint_off UNUSED
    logic [31:0]        dummy_dout; // Dummy variable for dout. Put this here to make the stupid verilator happy.
    // verilator lint_on UNUSED
-   logic [15:0]        mem[RAM_WORDS-1:0]; // The RAM
+   logic [15:0]        mem[RAM_WORDS-1:0];
+   logic               initiate_new_cycle; // Signal to initiate a new Collatz cycle.
 
    collatz c1(.clk(clk),
               .go(cgo),
@@ -33,27 +35,33 @@ module range
          din <= 0; // Start iteration count at 0
          cgo <= 1; // Pulse cgo to start collatz
          done <= 0; // Ensure done is low initially
+         initiate_new_cycle <= 0;
       end else if (running) begin
-         cgo <= 0; // Ensure cgo is pulsed only once per iteration
          if (cdone) begin
-            we <= 1; // Enable write for a single cycle
-            if (we) begin
-               mem[num] <= din;
-               if ({28'b0, num} == (RAM_WORDS-1)) begin
-                  running <= 0;
-                  done <= 1; // Pulse done signal to indicate completion
-                  we <= 0; // Disable write after storing the last value
-               end else begin
-                  num <= num + 1;
-                  n <= n + 1;
-                  din <= 0;
-                  cgo <= 1;
-               end
+            cdone <= 0;
+            we <= 1;
+            /* TODO: optimize this if we have time. This is the opposite of elegance but somehow just works. */
+            if (num == 0) mem[num] <= din;
+            else mem[num] <= din+1;
+            if ({28'b0, num} == RAM_WORDS-1) begin
+               running <= 0;
+               done <= 1;
+            end else begin
+               num <= num + 1;
+               n <= n + 1;
+               din <= 0;
+               initiate_new_cycle <= 1; // Set flag to initiate a new cycle
             end
-         end else if (we) begin
-            we <= 0;
-         end else if (!cgo && !cdone) begin
-            din <= din + 1;
+         end else if (initiate_new_cycle) begin
+            cgo <= 1;
+            initiate_new_cycle <= 0; // Reset flag after initiating
+         end else begin
+            cgo <= 0;
+            if (we) begin
+               we <= 0;
+            end else begin
+               din <= din + 1;
+            end
          end
       end
    end
