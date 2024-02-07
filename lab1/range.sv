@@ -1,74 +1,77 @@
-
 module range
    #(parameter
      RAM_WORDS = 16,            // Number of counts to store in RAM
      RAM_ADDR_BITS = 4)         // Number of RAM address bits
    (input logic         clk,    // Clock
-    input logic         go,     // Read start and start testing
-    input logic [31:0]  start,  // Number to start from or for reading the count
-    output logic        done,   // True once memory is filled
+    input logic 	go,     // Read start and start testing
+    input logic [31:0] 	start,  // Number to start from or count to read
+    output logic 	done,   // True once memory is filled
     output logic [15:0] count); // Iteration count once finished
 
-   logic               cgo, cdone;
-   logic [31:0]        n;
-   logic [RAM_ADDR_BITS-1:0] num;
-   logic               running;
-   logic [15:0]        din;
-   logic               we;
-   // verilator lint_off UNUSED
-   logic [31:0]        dummy_dout; // Dummy variable for dout. Put this here to make the stupid verilator happy.
-   // verilator lint_on UNUSED
-   logic [15:0]        mem[RAM_WORDS-1:0];
-   logic               initiate_new_cycle; // Signal to initiate a new Collatz cycle.
+   logic 		cgo;    // "go" for the Collatz iterator
+   logic                cdone;  // "done" from the Collatz iterator
+   logic [31:0] 	n;      // number to start the Collatz iterator
 
+// verilator lint_off PINCONNECTEMPTY
+
+   // Instantiate the Collatz iterator
    collatz c1(.clk(clk),
-              .go(cgo),
-              .n(n),
-              .dout(dummy_dout),
-              .done(cdone));
+	      .go(cgo),
+	      .n(n),
+	      .done(cdone),
+	      .dout());
+
+   logic [RAM_ADDR_BITS - 1:0] 	 num;         // The RAM address to write
+   logic 			 running = 0; // True during the iterations
+
+   /* Replace this comment and the code below with your solution,
+      which should generate running, done, cgo, n, num, we, and din */
+   assign we = running;
+   always_ff @(posedge clk) begin
+	// Reset
+	if (go) begin
+		n<=start;				// Init first number
+		num<=0;					// Init RAM address
+		running<=1;				// Iteration Running
+		din<=16'h0;				// Init count
+		cgo <= 1;				// Start collatz
+		done <= 0;				// Init done
+	end
+	// One number Complete
+	else if (cdone) begin
+		// If RAM full, give done signal
+		if (num == ((1 << RAM_ADDR_BITS) -1)) begin
+			done <=1;
+			running<=0;			// Iteration Done
+		end
+		// Init next iteration
+		else begin
+			num<=num+1;			// Move RAM Address
+			n<=n+1;				// Next number
+			din<=16'h0;			// Init count
+			cgo <= 1;			// Start collatz
+			cdone <= 0;			// Init cdone
+		end
+	end
+	// Computing
+	else if (!done) begin
+		cgo <= 0;				// cgo should be 0
+		din <= din+1;				// Count++
+	end
+   end
+   /* Replace this comment and the code above with your solution */
+
+   logic 			 we;                    // Write din to addr
+   logic [15:0] 		 din;                   // Data to write
+   logic [15:0] 		 mem[RAM_WORDS - 1:0];  // The RAM itself
+   logic [RAM_ADDR_BITS - 1:0] 	 addr;                  // Address to read/write
+
+   assign addr = we ? num : start[RAM_ADDR_BITS-1:0];
 
    always_ff @(posedge clk) begin
-      if (go && !running) begin
-         running <= 1;
-         n <= start;
-         num <= 0;
-         din <= 0; // Start iteration count at 0
-         cgo <= 1; // Pulse cgo to start collatz
-         done <= 0; // Ensure done is low initially
-         initiate_new_cycle <= 0;
-      end else if (running) begin
-         if (cdone) begin
-            cdone <= 0;
-            we <= 1;
-            /* TODO: optimize this if we have time. This is the opposite of elegance but somehow just works. */
-            if (num == 0) mem[num] <= din;
-            else mem[num] <= din+1;
-            if ({28'b0, num} == RAM_WORDS-1) begin
-               running <= 0;
-               done <= 1;
-            end else begin
-               num <= num + 1;
-               n <= n + 1;
-               din <= 0;
-               initiate_new_cycle <= 1; // Set flag to initiate a new cycle
-            end
-         end else if (initiate_new_cycle) begin
-            cgo <= 1;
-            initiate_new_cycle <= 0; // Reset flag after initiating
-         end else begin
-            cgo <= 0;
-            if (we) begin
-               we <= 0;
-            end else begin
-               din <= din + 1;
-            end
-         end
-      end
+      if (we) mem[addr] <= din;
+      count <= mem[addr];
    end
 
-   always_ff @(posedge clk) begin
-      if (done) begin
-         count <= mem[start[RAM_ADDR_BITS-1:0]];
-      end
-   end
 endmodule
+
