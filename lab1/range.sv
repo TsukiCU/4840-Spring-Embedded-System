@@ -49,7 +49,7 @@ module range
 			end
 			// Init next iteration
 			else begin
-				num<=num+1;			// Move RAM Address
+				num<=num+1'b1;		// Move RAM Address
 				n<=n+1;				// Next number
 				din<=16'h0;			// Init count
 				cgo <= 1;			// Start collatz
@@ -58,7 +58,9 @@ module range
 		// Computing
 		else if (!done) begin
 			cgo <= 0;				// cgo should be 0
-			din <= (n==0)?din-1:din+1;		// Count++
+			// Deal with 0, if input is 0, get max val
+			// Else, count++
+			din <= (n==0)?din-16'b1:din+16'b1;
 		end
 		// Set cgo = 0 at next cycle
 		if (cgo)

@@ -37,7 +37,8 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 	logic [7:0]				addr;		// RAM address
 	logic [9:0]				base;		// Base number
 	logic [11:0]			o_count;	// Screen output count
-	logic [22:0]			counter;	// Button timer
+	logic [24:0]			counter;	// Button timer
+	logic					first;		// Button first
 
 	// Screen
 	// Bind count to right 3 digits
@@ -58,7 +59,7 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 	assign n = done ? {2'b0,base[9:0]}+{4'b0,addr} : 12'b0;
 	// Input value
 	// If go, input number, else input address										
-	assign start[27:0] = go ? {18'b0,SW} : {20'b0,addr};	
+	assign start[27:0] = go ? {18'b0,SW} : {20'b0,addr};
 
 	// Always at Posedge
 	always_ff @(posedge CLOCK_50) begin
@@ -73,18 +74,26 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 			go <= 0;
 
 		// Next button held
-		if((!KEY[0]) || (!KEY[1])) begin
-			counter <= counter + 1;
-			if ((counter == 0)) begin // Debounce delay
-				counter <= 23'd1;
+		if((!KEY[0]) ^ (!KEY[1])) begin
+			counter <= counter + 25'b1;
+			
+			if (counter == 25'b0) begin // Debounce delay
+				// Set first to 0
+				first <= first && !first;
+				// if first time, wait for 1<<25 cycles, about 800 ms
+				// else, wait for 1<<23 cycles, about 200 ms
+				counter <= first? 25'b1 : 25'h1800000;
 				if(!KEY[0])
-					addr <= addr + 1;
+					addr <= addr + 8'b1;
 				else if(!KEY[1])
-					addr <= addr - 1;
+					addr <= addr - 8'b1;
 			end
 		end 
-		else
-			counter <= 23'd1;
+		else begin
+			// Set for fast press, about 50 ms
+			counter <= 25'h1ffffff - 25'b1<<21;
+			first <= 1'b1;
+		end
 
 		// Reset
 		if(!KEY[2]) begin
