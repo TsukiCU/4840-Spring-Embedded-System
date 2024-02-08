@@ -26,6 +26,9 @@ module range
 
    /* Replace this comment and the code below with your solution,
       which should generate running, done, cgo, n, num, we, and din */
+	initial begin
+		done = 0;	
+	end
 	assign we = running;
 	always_ff @(posedge clk) begin
 		// Reset
