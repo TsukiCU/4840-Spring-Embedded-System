@@ -43,7 +43,6 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 	logic [9:0]			base;
 	logic [11:0]			o_count;		// Screen output count
 	logic [22:0]			counter;	// Button timer
-	logic show;
 
 	// Screen
 	// Bind count to right 3 digits
@@ -57,9 +56,9 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 
 	assign LEDR = SW;					// Bind LED lights to the switches
 	assign start[27:0] = go ? {18'b0,SW} : {20'b0,addr};	// If go, input number, else input address
-	assign o_count = count[11:0];
+	assign o_count = done ? count[11:0] : 32'b0;
 	//assign n = {2'b0,SW[9:0]}+{4'b0,addr};
-	assign n = {2'b0,base[9:0]}+{4'b0,addr};
+	assign n = done ? {2'b0,base[9:0]}+{4'b0,addr} : 32'b0;
 
 	always_ff @(posedge CLOCK_50) begin
 		// Start button
@@ -68,7 +67,6 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 			go <= 1;				// Set start signal
 			addr <= 8'b0;				// Init RAM address
 			base <= SW[9:0];
-			show <= 1;
 		end
 		else
 			go <= 0;
