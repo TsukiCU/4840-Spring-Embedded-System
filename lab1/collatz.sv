@@ -10,12 +10,12 @@ module collatz(
     always_ff @(posedge clk) begin
         if (go) begin
             // Reset the state and start the computation.
-            dout <= n;
-            done <= ((n == 32'd1) || (n == 32'd0));
-        end else if (dout != 32'd1 && !done) begin
-		if (dout == 32'd2) begin
-		    done <= 1'b1;
-		end
+		if(n==0)
+			dout <= 32'd1;
+		else
+            	dout <= n;
+        end
+	else if (!done) begin
             // core logic of Collatz conjecture.
             if (dout[0] == 1'b0) begin
                 dout <= dout >> 1;
@@ -23,8 +23,7 @@ module collatz(
                 dout <= (dout * 3) + 1;
             end
         end
-
-
     end
 
+assign done = (!go && (dout == 32'd1));
 endmodule

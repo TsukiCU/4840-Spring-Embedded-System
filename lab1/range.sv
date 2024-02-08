@@ -11,7 +11,7 @@ module range
    logic 		cgo;    // "go" for the Collatz iterator
    logic                cdone;  // "done" from the Collatz iterator
    logic [31:0] 	n;      // number to start the Collatz iterator
-   logic 		cdone_prev; // Previous value of cdone
+   //logic 		cdone_prev; // Previous value of cdone
 
 // verilator lint_off PINCONNECTEMPTY
 
@@ -33,14 +33,13 @@ module range
 	if (go) begin
 		n<=start;				// Init first number
 		num<=0;					// Init RAM address
-		running<=1;				// Iteration Running
-		din<=16'h0;				// Init count
+		running<=1;				// Iteration Running		
 		cgo <= 1;				// Start collatz
-		done <= 0;				// Init done
-		cdone_prev <= 0;			// Initialize cdone_prev
+		done <= 0;				// Init done	
+		din<=16'h0;				// Init count
 	end
 	// One number Complete
-	else if (cdone && !cdone_prev) begin
+	else if (cdone && !cgo) begin
 		// If RAM full, give done signal
 		if (num == ((1 << RAM_ADDR_BITS) -1)) begin
 			done <=1;
@@ -58,9 +57,11 @@ module range
 	// Computing
 	else if (!done) begin
 		cgo <= 0;				// cgo should be 0
-		din <= din+1;				// Count++
+		din <= (n==0)?din-1:din+1;		// Count++
 	end
-	cdone_prev <= cdone;
+	if (cgo)
+		cgo <= go;
+	//cdone_prev <= cdone;
    end
    /* Replace this comment and the code above with your solution */
 
