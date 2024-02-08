@@ -9,7 +9,7 @@ int main(int argc, const char ** argv, const char ** env) {
   // Treat the argument on the command-line as the place to start
   int n;
   if (argc > 1 && argv[1][0] != '+') n = atoi(argv[1]);
-  else n = 7; // Default
+  else n = 1; // Default
 
   Vcollatz * dut = new Vcollatz;  // Instantiate the collatz module
 
