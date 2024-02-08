@@ -11,10 +11,9 @@ module range
    logic 		cgo;    // "go" for the Collatz iterator
    logic                cdone;  // "done" from the Collatz iterator
    logic [31:0] 	n;      // number to start the Collatz iterator
-   //logic 		cdone_prev; // Previous value of cdone
 
 // verilator lint_off PINCONNECTEMPTY
-
+   
    // Instantiate the Collatz iterator
    collatz c1(.clk(clk),
 	      .go(cgo),
@@ -27,42 +26,41 @@ module range
 
    /* Replace this comment and the code below with your solution,
       which should generate running, done, cgo, n, num, we, and din */
-   assign we = running;
-   always_ff @(posedge clk) begin
-	// Reset
-	if (go) begin
-		n<=start;				// Init first number
-		num<=0;					// Init RAM address
-		running<=1;				// Iteration Running		
-		cgo <= 1;				// Start collatz
-		done <= 0;				// Init done	
-		din<=16'h0;				// Init count
-	end
-	// One number Complete
-	else if (cdone && !cgo) begin
-		// If RAM full, give done signal
-		if (num == ((1 << RAM_ADDR_BITS) -1)) begin
-			done <=1;
-			running<=0;			// Iteration Done
+	assign we = running;
+	always_ff @(posedge clk) begin
+		// Reset
+		if (go) begin
+			n<=start;				// Init first number
+			num<=0;					// Init RAM address
+			running<=1;				// Iteration Running		
+			cgo <= 1;				// Start collatz
+			done <= 0;				// Init done	
+			din<=16'h0;				// Init count
 		end
-		// Init next iteration
-		else begin
-			num<=num+1;			// Move RAM Address
-			n<=n+1;				// Next number
-			din<=16'h0;			// Init count
-			cgo <= 1;			// Start collatz
-			//cdone <= 0;			// Init cdone
+		// One number Complete
+		else if (cdone && !cgo) begin
+			// If RAM full, give done signal
+			if (num == ((1 << RAM_ADDR_BITS) -1)) begin
+				done <=1;
+				running<=0;			// Iteration Done
+			end
+			// Init next iteration
+			else begin
+				num<=num+1;			// Move RAM Address
+				n<=n+1;				// Next number
+				din<=16'h0;			// Init count
+				cgo <= 1;			// Start collatz
+			end
 		end
+		// Computing
+		else if (!done) begin
+			cgo <= 0;				// cgo should be 0
+			din <= (n==0)?din-1:din+1;		// Count++
+		end
+		// Set cgo = 0 at next cycle
+		if (cgo)
+			cgo <= go;
 	end
-	// Computing
-	else if (!done) begin
-		cgo <= 0;				// cgo should be 0
-		din <= (n==0)?din-1:din+1;		// Count++
-	end
-	if (cgo)
-		cgo <= go;
-	//cdone_prev <= cdone;
-   end
    /* Replace this comment and the code above with your solution */
 
    logic 			 we;                    // Write din to addr
@@ -71,10 +69,11 @@ module range
    logic [RAM_ADDR_BITS - 1:0] 	 addr;                  // Address to read/write
 
    assign addr = we ? num : start[RAM_ADDR_BITS-1:0];
-
+   
    always_ff @(posedge clk) begin
       if (we) mem[addr] <= din;
-      count <= mem[addr];
+      count <= mem[addr];      
    end
 
 endmodule
+	     
