@@ -11,7 +11,7 @@ module range
    logic 		cgo;    // "go" for the Collatz iterator
    logic                cdone;  // "done" from the Collatz iterator
    logic [31:0] 	n;      // number to start the Collatz iterator
-   logic                cdone_prev; // Previous value of cdone
+   logic 		cdone_prev; // Previous value of cdone
 
 // verilator lint_off PINCONNECTEMPTY
 
@@ -29,38 +29,38 @@ module range
       which should generate running, done, cgo, n, num, we, and din */
    assign we = running;
    always_ff @(posedge clk) begin
-	   // Reset
-      if (go) begin
-         n<=start;				// Init first number
-         num<=0;					// Init RAM address
-         running<=1;				// Iteration Running
-         din<=16'h0;				// Init count
-         cgo <= 1;				// Start collatz
-         done <= 0;				// Init done
-         cdone_prev <= 0;     // Init cdone_prev
-      end
-	   // One number Complete
-      else if (cdone && !cdone_prev) begin
-         // If RAM full, give done signal
-         if (num == ((1 << RAM_ADDR_BITS) -1)) begin
-            done <=1;
-            running<=0;			// Iteration Done
-         end
-         // Init next iteration
-         else begin
-            num<=num+1;			// Move RAM Address
-            n<=n+1;				// Next number
-            din<=16'h0;			// Init count
-            cgo <= 1;			// Start collatz
-         end
-	   end
-
-      else if (!done) begin
-         cgo <= 0;				// cgo should be 0
-         din <= din+1;				// Count++
-	   end
-      cdone_prev <= cdone;    // update previous state of cdone.
-
+	// Reset
+	if (go) begin
+		n<=start;				// Init first number
+		num<=0;					// Init RAM address
+		running<=1;				// Iteration Running
+		din<=16'h0;				// Init count
+		cgo <= 1;				// Start collatz
+		done <= 0;				// Init done
+		cdone_prev <= 0;			// Initialize cdone_prev
+	end
+	// One number Complete
+	else if (cdone && !cdone_prev) begin
+		// If RAM full, give done signal
+		if (num == ((1 << RAM_ADDR_BITS) -1)) begin
+			done <=1;
+			running<=0;			// Iteration Done
+		end
+		// Init next iteration
+		else begin
+			num<=num+1;			// Move RAM Address
+			n<=n+1;				// Next number
+			din<=16'h0;			// Init count
+			cgo <= 1;			// Start collatz
+			//cdone <= 0;			// Init cdone
+		end
+	end
+	// Computing
+	else if (!done) begin
+		cgo <= 0;				// cgo should be 0
+		din <= din+1;				// Count++
+	end
+	cdone_prev <= cdone;
    end
    /* Replace this comment and the code above with your solution */
 
@@ -77,4 +77,3 @@ module range
    end
 
 endmodule
-

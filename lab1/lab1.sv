@@ -1,13 +1,17 @@
 // CSEE 4840 Lab 1: Run and Display Collatz Conjecture Iteration Counts
 //
-// Spring 2023
+// Spring 2024
 //
-// By: <your name here>
-// Uni: <your uni here>
+// By: Yunzhou Li, Hongyu Sun
+// Uni: yl5407, hs3475
 
 module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
-	     
+
 	     input logic [3:0] 	KEY, // Pushbuttons; KEY[0] is rightmost
+	     // [0] - next num
+	     // [1] - prev num
+	     // [2] - reset pos
+	     // [3] - start
 
 	     input logic [9:0] 	SW, // Switches; SW[0] is rightmost
 
@@ -17,31 +21,76 @@ module lab1( input logic        CLOCK_50,  // 50 MHz Clock input
 	     output logic [9:0] LEDR // LEDs above the switches; LED[0] on right
 	     );
 
-   logic 			clk, go, done;   
-   logic [31:0] 		start;
+   logic 			clk, go, done;
+   logic [31:0] 		start = 32'b0;
    logic [15:0] 		count;
 
    logic [11:0] 		n;
-   
+
    assign clk = CLOCK_50;
- 
+
    range #(256, 8) // RAM_WORDS = 256, RAM_ADDR_BITS = 8)
          r ( .* ); // Connect everything with matching names
 
-   // Replace this comment and the code below it with your own code;
-   // The code below is merely to suppress Verilator lint warnings
-   assign HEX0 = {KEY[2:0], KEY[3:0]};
-   assign HEX1 = SW[6:0];
-   assign HEX2 = {(n == 12'b0), (count == 16'b0) ^ KEY[1],
-		  go, done ^ KEY[0], SW[9:7]};
-   assign HEX3 = HEX0;
-   assign HEX4 = HEX1;
-   assign HEX5 = HEX2;
-   assign LEDR = SW;
-   assign go = KEY[0];
-   assign start = {SW[1:0], SW, SW, SW};
-   assign n = {SW[1:0], SW};
-   
-   
-  
+
+
+	// Replace this comment and the code below it with your own code;
+	// The code below is merely to suppress Verilator lint warnings
+	// Meaningless code used to avoid warning
+	assign start[31:28] = count[15:12];
+
+	logic [7:0]			addr;		// RAM address
+	logic [9:0]			base;
+	logic [11:0]			o_count;		// Screen output count
+	logic [22:0]			counter;	// Button timer
+	logic show;
+
+	// Screen
+	// Bind count to right 3 digits
+	// Bind num to left 3 digits
+	hex7seg h0(.a(o_count[3:0]),.y(HEX0)),
+		h1(.a(o_count[7:4]),.y(HEX1)),
+		h2(.a(o_count[11:8]),.y(HEX2)),
+		h3(.a(n[3:0]),.y(HEX3)),
+		h4(.a(n[7:4]),.y(HEX4)),
+		h5(.a(n[11:8]),.y(HEX5));
+
+	assign LEDR = SW;					// Bind LED lights to the switches
+	assign start[27:0] = go ? {18'b0,SW} : {20'b0,addr};	// If go, input number, else input address
+	assign o_count = count[11:0];
+	//assign n = {2'b0,SW[9:0]}+{4'b0,addr};
+	assign n = {2'b0,base[9:0]}+{4'b0,addr};
+
+	always_ff @(posedge CLOCK_50) begin
+		// Start button
+		if(!KEY[3]) begin
+			//n <= {4'b0,SW[7:0]};			// Set output number
+			go <= 1;				// Set start signal
+			addr <= 8'b0;				// Init RAM address
+			base <= SW[9:0];
+			show <= 1;
+		end
+		else
+			go <= 0;
+		// Next button held
+		if((!KEY[0]) || (!KEY[1])) begin
+			counter <= counter + 1;
+			if ((counter == 0)) begin // Debounce delay
+				counter <= 23'd1;
+				if(!KEY[0])
+					addr <= addr + 1;
+				else if(!KEY[1])
+					addr <= addr - 1;
+			end
+		end
+		else
+			counter <= 23'd1;
+		// Reset
+		if(!KEY[2]) begin
+			addr <= 0;
+			// n <= n + {4'b0,addr};
+		end
+	end
+
+
 endmodule

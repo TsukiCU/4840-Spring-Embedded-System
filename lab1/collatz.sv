@@ -11,8 +11,11 @@ module collatz(
         if (go) begin
             // Reset the state and start the computation.
             dout <= n;
-            done <= 1'b0;
+            done <= ((n == 32'd1) || (n == 32'd0));
         end else if (dout != 32'd1 && !done) begin
+		if (dout == 32'd2) begin
+		    done <= 1'b1;
+		end
             // core logic of Collatz conjecture.
             if (dout[0] == 1'b0) begin
                 dout <= dout >> 1;
@@ -21,9 +24,7 @@ module collatz(
             end
         end
 
-        if (dout == 32'd2) begin
-            done <= 1'b1;
-        end
+
     end
 
 endmodule
