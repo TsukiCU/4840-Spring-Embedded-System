@@ -37,19 +37,20 @@
 
 int sockfd; /* Socket file descriptor */
 char keys[6];  /* keys pressed */
+char msgbuffer[MESSAGE_SIZE];  /* Store the message to be sent. */
 
 /* initial position for text msg? */
 struct position text_pos = {
-  .row = 8,
-  .col = 0,
+  .txt_row = 8,
+  .txt_col = 0,
 };
 
 /*
  * cursor for message box.
  */
 struct position msg_pos = {
-  .row = 1;
-  .col = 0;
+  .msg_row = MSG_START_ROW;
+  .msg_col = 0;
 };
 
 struct msg_history msg_box_his = {
@@ -137,11 +138,13 @@ int main()
       printf("%s\n", keystate);
 
       /* HERE! */
-      // storing content to keys?
-      for (uint8_t i=0; i<6; i++) keys[i] = keycode_to_char(packet.keycode[i], packet.modifiers);
+      // for (uint8_t i=0; i<6; i++) keys[i] = keycode_to_char(packet.keycode[i], packet.modifiers);
       // fbputs(keys, 12, 0);
+      char key;
+      key = keycode_to_char(packet.keycode[0]);
+      print_char(key, &msg_pos);
 
-      fbputs(keystate, 6, 0);
+      //fbputs(keystate, 6, 0);
       if (packet.keycode[0] == 0x29) { /* ESC pressed? */
 	break;
       }
@@ -174,27 +177,27 @@ void *network_thread_f(void *ignored)
     len = strlen(recvBuf);
 
     // If exceeds current page
-    if(msg_pos.row+len/MAX_COLS>=MSG_START_ROW){
+    if(msg_pos.msg_row+len/MAX_COLS>=MSG_START_ROW){
         // Copy to buffer
         memcpy(recvBuf,
-          msg_box_his.pages[msg_box_his.count-1]+(msg_pos.row-1)*MAX_COLS,
-          (MSG_START_ROW-msg_pos.row)*MAX_COLS
+          msg_box_his.pages[msg_box_his.count-1]+(msg_pos.msg_row-1)*MAX_COLS,
+          (MSG_START_ROW-msg_pos.msg_row)*MAX_COLS
         );
         // Allocate new page
         msg_box_his.pages[msg_box_his.count] = alloc_new_msg_page();
         ++msg_box_his.count;
-        recvBuf+=(MSG_START_ROW-msg_pos.row)*MAX_COLS;
+        recvBuf+=(MSG_START_ROW-msg_pos.msg_row)*MAX_COLS;
         // Reset message cursor
-        msg_pos.row = 1;
-        msg_pos.row = 0;
+        msg_pos.msg_row = 1;
+        msg_pos.msg_col = 0;
     }
     fbputs_wrap(recvBuf, &msg_pos);
     memcpy(recvBuf,
-      msg_box_his.pages[msg_box_his.count-1]+(msg_pos.row-1)*MAX_COLS,
+      msg_box_his.pages[msg_box_his.count-1]+(msg_pos.msg_row-1)*MAX_COLS,
       strlen(recvBuf)
     );
-	++msg_pos.row;
-    msg_pos.col=0;
+	++msg_pos.msg_row;
+    msg_pos.msg_col=0;
   }
 
   return NULL;

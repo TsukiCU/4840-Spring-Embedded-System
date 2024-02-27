@@ -47,6 +47,13 @@ void horizontal_line()
   put_line('-', place);
 }
 
+/* Put char at a specific location with all the position modified. */
+void print_char(char key, struct position *pos)
+{
+  fbputchar(key, pos->msg_row, pos->msg_col);
+  pos->col++;
+}
+
 /*
  * Open the framebuffer to prepare it to be written to.  Returns 0 on success
  * or one of the FBOPEN_... return codes if something went wrong.
@@ -66,7 +73,6 @@ int fbopen()
 
   framebuffer = mmap(0, fb_finfo.smem_len, PROT_READ | PROT_WRITE,
 		     MAP_SHARED, fd, 0);
-  printf("smem_len %lu\n",fb_finfo.smem_len);
   if (framebuffer == (unsigned char *)-1) return FBOPEN_MMAP;
 
   return 0;
@@ -129,8 +135,8 @@ void fbputs(const char *s, int row, int col)
   while ((c = *s++) != 0) fbputchar(c, row, col++);
 }
 
-/* 
- * Same basic function as fbputs but can handle wrap around. 
+/*
+ * Same basic function as fbputs but can handle wrap around.
  */
 void fbputs_wrap(const char *s, struct position *pos)
 {
@@ -145,8 +151,6 @@ void fbputs_wrap(const char *s, struct position *pos)
     else
       ++col;
   }
-  pos->row = row;
-  pos->col = col;
 }
 
 /*

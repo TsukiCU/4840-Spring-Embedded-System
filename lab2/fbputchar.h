@@ -12,11 +12,14 @@
 #define MAX_COLS   64          /* Number of columns on the screen */
 #define MSG_START_ROW 21       /* Starting position of message box */
 #define MSG_BOX_LINES MSG_START_ROW-1
+#define TAB_SPACE   4          /* Space for TAB (4) */
+#define MESSAGE_SIZE 128       /* Set it 128. may nd modify */
 
 struct position
 {
-    int row;
-    int col;
+    uint8_t row;
+    uint8_t col;
+    uint8_t cursor_buff;
 };
 
 /* Some special keys. */
