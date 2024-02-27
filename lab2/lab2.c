@@ -177,6 +177,7 @@ void *network_thread_f(void *ignored)
     fflush(stdout);
     len = strlen(recvBuf);
 
+	char *p = recvBuf;
     // If exceeds current page
     if(text_pos.row+len/MAX_COLS>=MSG_START_ROW){
         // Copy to buffer
@@ -190,9 +191,10 @@ void *network_thread_f(void *ignored)
         // Reset message cursor
         text_pos.row = 1;
         text_pos.col = 0;
+		p = recvBuf+(MSG_START_ROW-text_pos.row)*MAX_COLS;
     }
     fbputs_wrap(recvBuf, &msg_pos);
-    memcpy(recvBuf+(MSG_START_ROW-text_pos.row)*MAX_COLS,
+    memcpy(p,
       msg_box_his.pages[msg_box_his.count-1]+(text_pos.row-1)*MAX_COLS,
       strlen(recvBuf)
     );
