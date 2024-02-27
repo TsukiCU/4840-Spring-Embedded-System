@@ -120,12 +120,3 @@ char ascii_kb_table_caps[] = {
 0  , '1', '2', '3', '4', '5', '6', '7',
 '8', '9', '0', '.', 0  , 0  , 0  , '='
 };
-
-char keycode_to_char(uint8_t modifier, uint8_t keycode)
-{
-/* a->z : 0x04 -> 0x1d */
-  if (keycode >= 0x04 && keycode <= 0x1d) {
-    if (SHIFT_PRESSED(modifier)) return 'A' + (keycode - 0x04);
-    else return 'a' + (keycode - 0x04);
-  }
-}
