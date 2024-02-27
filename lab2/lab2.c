@@ -15,7 +15,8 @@
 #include "usbkeyboard.h"
 #include <pthread.h>
 #include "usb_hid_keys.h"
-
+#include <errno.h>
+#include <string.h>
 /* Update SERVER_HOST to be the IP address of
  * the chat server you are connecting to
  */
@@ -145,6 +146,35 @@ void *network_thread_f(void *ignored)
     printf("%s", recvBuf);
     fbputs_wrap(recvBuf, &text_pos);
   }
+
+  return NULL;
+}
+
+void async_send_message(const char *msg)
+{
+  if(msg==NULL)
+    return;
+  if(!strlen(msg))
+    return;
+
+  /* Start the network thread for sending */
+  pthread_create(&network_thread, NULL, network_thread_s, msg);
+}
+
+/*
+ * Message sending thread
+ */
+void *network_thread_s(void *msg)
+{
+  char *p = msg;
+  if(write(sockfd,p,strlen(p)+1)){
+	char *err = strerror(errno);
+    perror(err);
+	// change error printing here
+	fbputs_wrap(err, 2, 0);
+  };
+  else
+    print("Message sent: %s\n",p);
 
   return NULL;
 }
