@@ -58,56 +58,6 @@ void horizontal_line()
 }
 
 
-/* The buffer for message box is only 128 bytes in length.
- * Put char at a specific location with all the position modified.
- */
-void print_char(char key, struct position *pos, char *msg_buf)
-{
-  // if it's backspace
-  if (key == '\b') {
-    fbputchar(' ', pos->row, pos->col-1);
-    pos->col--;
-    msg_buf[pos->buf_idx--] = ' ';
-  }
-
-  // if it's enter, clear everything and send message.
-  if (key == '\n') {
-    /* TODO: send message. */
-    for (int i=MSG_START_ROW; i<MSG_END_ROW; i++) put_line(' ', i);
-    pos->row = MSG_START_ROW;
-    pos->col = 0;
-    pos->buf_idx = 0;
-  }
-
-// if reach the end of the msg area then need a refresh.
-  else if (pos->row == MSG_END_ROW-1 && pos->col == MAX_COLS-1) {
-    // copy the second line up and set the second line empty.
-    for (int i=0; i<MAX_COLS; i++) fbputchar(msg_buf[pos->buf_idx-MAX_COLS+i], pos->row-1, i);
-    put_line(pos->row, ' ');
-    pos->col=0;
-    pos->buf_idx-=MAX_COLS-1;
-    msg_buf[pos->buf_idx] = key;
-    fbputchar(key, pos->row, pos->col);
-    pos->col++;
-  }
-// just need to reset column.
-  else if (pos->col == MAX_COLS-1) {
-  msg_buf[pos->buf_idx] = key;
-    pos->col = 0;
-    pos->row += 1;
-    fbputchar(key, pos->row, pos->col);
-    pos->col++;
-    pos->buf_idx++;
-  }
-// nothing special, just put a character here.
-  else {
-  msg_buf[pos->buf_idx] = key;
-    fbputchar(key, pos->row, pos->col);
-    pos->col++;
-    pos->buf_idx++;
-  }
-}
-
 /*
  * Open the framebuffer to prepare it to be written to.  Returns 0 on success
  * or one of the FBOPEN_... return codes if something went wrong.

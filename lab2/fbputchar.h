@@ -53,6 +53,5 @@ extern void clear_txt_box();
 extern void horizontal_line();
 extern void fbputs_wrap(const char *, struct position *);
 extern char *alloc_new_text_page();
-extern void print_char(char, struct position *, char *);
 
 #endif
