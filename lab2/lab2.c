@@ -92,7 +92,6 @@ int main()
     fbputchar('*', 23, col);
   }
 
-  fbputs("Hello CSEE 4840 World!", 4, 10);
   /* Split the screen into two parts with a horizontal line. */
   horizontal_line();
 
@@ -206,6 +205,7 @@ void *network_thread_f(void *ignored)
         text_pos.col = 0;
 	p = recvBuf+(MSG_START_ROW-text_pos.row)*MAX_COLS;
 	len-=(MSG_START_ROW-text_pos.row)*MAX_COLS;
+        clear_txt_box();
     }
 	printf("Msg copy text_box_his.count %d, offset %d, len %d\n",text_box_his.count,(text_pos.row-1)*MAX_COLS,len);
 	printf("Msg src %p\n",text_box_his.pages[text_box_his.count-1]);
@@ -214,7 +214,6 @@ void *network_thread_f(void *ignored)
       len
     );*/
 	printf("Msg print\n");
-	clear_txt_box();
     fbputs_wrap(recvBuf, &text_pos);
 	++text_pos.row;
     text_pos.col=0;
