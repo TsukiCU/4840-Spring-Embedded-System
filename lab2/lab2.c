@@ -2,7 +2,8 @@
  *
  * CSEE 4840 Lab 2 for 2019
  *
- * Name/UNI: Please Changeto Yourname (pcy2301)
+ * Hongyu Sun hs3475
+ * Yunzhou Li yl5407
  */
 #include "fbputchar.h"
 #include <stdio.h>
@@ -28,7 +29,7 @@
  *
  * http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
  * http://www.thegeekstuff.com/2011/12/c-socket-programming/
- * 
+ *
  */
 
 int sockfd; /* Socket file descriptor */
@@ -67,7 +68,7 @@ int main()
     fprintf(stderr, "Did not find a keyboard\n");
     exit(1);
   }
-    
+
   /* Create a TCP communications socket */
   if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
     fprintf(stderr, "Error: Could not create socket\n");

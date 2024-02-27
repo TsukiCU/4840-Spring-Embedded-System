@@ -1,5 +1,5 @@
 #ifndef _FBPUTCHAR_H
-#  define _FBPUTCHAR_H
+#define _FBPUTCHAR_H
 
 #define FBOPEN_DEV -1          /* Couldn't open the device */
 #define FBOPEN_FSCREENINFO -2  /* Couldn't read the fixed info */
