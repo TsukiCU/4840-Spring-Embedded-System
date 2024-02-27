@@ -29,6 +29,24 @@ struct fb_fix_screeninfo fb_finfo;
 unsigned char *framebuffer;
 static unsigned char font[];
 
+
+void put_line(char c, int row)
+{
+  int i;
+  for(int i=0; i<MAX_COLS; i++) fbputchar(c, row, i);
+}
+
+void clear_screen()
+{
+  for (int i=0; i<MAX_ROWS; i++) put_line(' ', i);
+}
+
+void horizontal_line()
+{
+  int place = 18;
+  put_line('-', place);
+}
+
 /*
  * Open the framebuffer to prepare it to be written to.  Returns 0 on success
  * or one of the FBOPEN_... return codes if something went wrong.
@@ -70,7 +88,7 @@ void fbputchar(char c, int row, int col)
     pixel = left;
     mask = 0x80;
     for (x = 0 ; x < FONT_WIDTH ; x++) {
-      if (pixels & mask) {	
+      if (pixels & mask) {
 	pixel[0] = 255; /* Red */
         pixel[1] = 255; /* Green */
         pixel[2] = 255; /* Blue */

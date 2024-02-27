@@ -39,6 +39,7 @@ uint8_t endpoint_address;
 
 pthread_t network_thread;
 void *network_thread_f(void *);
+pthread_mutex_t lock;   // lock for keyboard.
 
 int main()
 {
@@ -55,6 +56,7 @@ int main()
     exit(1);
   }
 
+  clear_screen();
   /* Draw rows of asterisks across the top and bottom of the screen */
   for (col = 0 ; col < 64 ; col++) {
     fbputchar('*', 0, col);
@@ -62,6 +64,8 @@ int main()
   }
 
   fbputs("Hello CSEE 4840 World!", 4, 10);
+  /* Split the screen into two parts with a horizontal line. */
+  horizontal_line();
 
   /* Open the keyboard */
   if ( (keyboard = openkeyboard(&endpoint_address)) == NULL ) {
