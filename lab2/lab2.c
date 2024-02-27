@@ -36,7 +36,7 @@
  */
 
 int sockfd; /* Socket file descriptor */
-extern char keys[6];  /* keys pressed */
+char keys[6];  /* keys pressed */
 
 /* initial position for text msg? */
 struct position text_pos = {
@@ -175,7 +175,7 @@ void *network_thread_s(void *msg)
 	char *err = strerror(errno);
     perror(err);
 	// change error printing here
-	fbputs_wrap(err, 2, 0);
+	fbputs(err, 2, 0);
   }
   else
     printf("Message sent: %s\n",p);
