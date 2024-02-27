@@ -44,6 +44,7 @@ char msgbuffer[MESSAGE_SIZE];  /* Store the message to be sent. */
 struct position text_pos = {
   .row = 1,
   .col = 0,
+  .buf_idx = 0,
 };
 
 /*
@@ -52,6 +53,7 @@ struct position text_pos = {
 struct position msg_pos = {
   .row = MSG_START_ROW,
   .col = 0,
+  .buf_idx = 0,
 };
 
 struct msg_history msg_box_his = {
@@ -143,7 +145,7 @@ int main()
       // fbputs(keys, 12, 0);
       char key;
       key = keycode_to_char(packet.keycode[0], packet.modifiers);
-      print_char(key, &msg_pos);
+      print_char(key, &msg_pos, &msgbuffer);
 
       //fbputs(keystate, 6, 0);
       if (packet.keycode[0] == 0x29) { /* ESC pressed? */

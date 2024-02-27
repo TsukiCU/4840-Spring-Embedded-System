@@ -49,11 +49,38 @@ void horizontal_line()
   put_line('-', place);
 }
 
+
 /* Put char at a specific location with all the position modified. */
-void print_char(char key, struct position *pos)
+void print_char(char key, struct position *pos, char *msg_buf)
 {
-  fbputchar(key, pos->row, pos->col);
-  pos->col++;
+// The buffer for message box is only 128 bytes.
+// if reach the end of the msg area then need a refresh.
+  if (pos->row == MSG_END_ROW && pos->col == MAX_COLS-1) {
+  msg_buf[pos->buf_idx] = key;
+    // copy the second line up and set the second line empty.
+    for (int i=0; i<MAX_COLS; i++) fbputchar(msgbuffer[pos->buf_idx-MAX_COLS+i], pos->row-1, i);
+    put_line(pos->row, ' ');
+    pos->col=0;
+    pos->buf_idx-=MAX_COLS-1;
+    fbputchar(key, pos->row, pos->col);
+    pos->col++;
+  }
+// just need to reset column.
+  else if (pos->col == MAX_COLS-1) {
+  msg_buf[pos->buf_idx] = key;
+    pos->col = 0;
+    pos->row += 1;
+    fbputchar(key, pos->row, pos->col);
+    pos->col++;
+    pos->buf_idx++;
+  }
+// nothing special, just put a character here.
+  else {
+  msg_buf[pos->buf_idx] = key;
+    fbputchar(key, pos->row, pos->col);
+    pos->col++;
+    pos->buf_idx++;
+  }
 }
 
 /*
