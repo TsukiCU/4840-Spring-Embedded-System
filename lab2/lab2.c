@@ -20,7 +20,7 @@
  * the chat server you are connecting to
  */
 /* arthur.cs.columbia.edu */
-#define SERVER_HOST "128.59.19.114"
+#define SERVER_HOST "192.168.113.129"
 #define SERVER_PORT 42000
 
 #define BUFFER_SIZE 128
@@ -36,6 +36,12 @@
 
 int sockfd; /* Socket file descriptor */
 
+/* initial position for text msg? */
+struct position text_pos {
+  .row = 8,
+  .col = 0,
+};
+
 struct libusb_device_handle *keyboard;
 uint8_t endpoint_address;
 
@@ -43,6 +49,10 @@ pthread_t network_thread;
 void *network_thread_f(void *);
 void handle_keyboard_input(struct usb_keyboard_packet *packet);
 pthread_mutex_t lock;   // lock for keyboard.
+
+void send_message()
+{}
+
 
 int main()
 {
@@ -130,10 +140,10 @@ void *network_thread_f(void *ignored)
   char recvBuf[BUFFER_SIZE];
   int n;
   /* Receive data */
-  while ( (n = read(sockfd, &recvBuf, BUFFER_SIZE - 1)) > 0 ) {
+  while ((n = read(sockfd, &recvBuf, BUFFER_SIZE - 1)) > 0 ) {
     recvBuf[n] = '\0';
     printf("%s", recvBuf);
-    fbputs(recvBuf, 8, 0);
+    fbputs_wrap(recvBuf, &text_pos);
   }
 
   return NULL;

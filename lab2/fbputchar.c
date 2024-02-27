@@ -32,7 +32,6 @@ static unsigned char font[];
 
 void put_line(char c, int row)
 {
-  int i;
   for(int i=0; i<MAX_COLS; i++) fbputchar(c, row, i);
 }
 
@@ -126,6 +125,14 @@ void fbputs(const char *s, int row, int col)
 {
   char c;
   while ((c = *s++) != 0) fbputchar(c, row, col++);
+}
+
+/* Same basic function as fbputs but can handle wrap around. */
+void fbputs_wrap(const char *s, struct position *pos)
+{
+  char c;
+  int row = pos->row, col = pos->col;
+  while ((c = *s++)!=0) fbputchar(c, pos->row, pos->col);
 }
 
 /* 8 X 16 console font from /lib/kbd/consolefonts/lat0-16.psfu.gz
