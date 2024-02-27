@@ -43,6 +43,14 @@ void clear_screen()
   for (int i=0; i<MAX_ROWS; i++) put_line(' ', i);
 }
 
+void clear_txt_box()
+{
+  memset(framebuffer + (1 * FONT_HEIGHT * 2 + fb_vinfo.yoffset) * fb_finfo.line_length,
+    0,
+    fb_finfo.line_length * FONT_HEIGHT * 2 * TXT_BOX_LINES
+  );
+}
+
 void horizontal_line()
 {
   int place = MSG_START_ROW;

@@ -214,6 +214,7 @@ void *network_thread_f(void *ignored)
       len
     );*/
 	printf("Msg print\n");
+	clear_txt_box();
     fbputs_wrap(recvBuf, &text_pos);
 	++text_pos.row;
     text_pos.col=0;
