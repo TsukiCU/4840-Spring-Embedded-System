@@ -150,6 +150,11 @@ int main()
       // fbputs(keys, 12, 0);
       char key;
       key = keycode_to_char(packet.keycode[0], packet.modifiers);
+
+      if (key == '\t') {  // if it's a tab
+        for (int i=0; i<TAB_SPACE; i++) print_char(' ', &msg_pos, &msgbuffer);
+      }
+
       print_char(key, &msg_pos, &msgbuffer);
 
       //fbputs(keystate, 6, 0);

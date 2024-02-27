@@ -50,12 +50,20 @@ void horizontal_line()
 }
 
 
-/* Put char at a specific location with all the position modified. */
+/* The buffer for message box is only 128 bytes in length.
+ * Put char at a specific location with all the position modified.
+ */
 void print_char(char key, struct position *pos, char *msg_buf)
 {
-// The buffer for message box is only 128 bytes.
+  // if it's backspace
+  if (key == '\b') {
+    fbputchar(' ', pos->row, pos->col-1);
+    pos->col--;
+    msg_buf[pos->buf_idx--] = ' ';
+  }
+
 // if reach the end of the msg area then need a refresh.
-  if (pos->row == MSG_END_ROW && pos->col == MAX_COLS-1) {
+  else if (pos->row == MSG_END_ROW && pos->col == MAX_COLS-1) {
   msg_buf[pos->buf_idx] = key;
     // copy the second line up and set the second line empty.
     for (int i=0; i<MAX_COLS; i++) fbputchar(msg_buf[pos->buf_idx-MAX_COLS+i], pos->row-1, i);
