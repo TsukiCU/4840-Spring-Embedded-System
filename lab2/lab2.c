@@ -38,7 +38,8 @@
 
 int sockfd; /* Socket file descriptor */
 char keys[6];  /* keys pressed */
-char msgbuffer[MESSAGE_SIZE];  /* Store the message to be sent. */
+char pressed_keys[6]  /* old ones */
+char msgbuffer[MESSAGE_SIZE+1];  /* Store the message to be sent. last one is '\0'. */
 
 /* initial position for text msg? */
 struct position text_pos = {
@@ -145,11 +146,24 @@ int main()
 	      packet.keycode[1]);
       printf("%s\n", keystate);
 
+    if (packet.keycode[0] == 0x29) { /* ESC pressed? */
+	break;
+      }
+
       /* HERE! */
-      // for (uint8_t i=0; i<6; i++) keys[i] = keycode_to_char(packet.keycode[i], packet.modifiers);
-      // fbputs(keys, 12, 0);
       char key;
-      key = keycode_to_char(packet.keycode[0], packet.modifiers);
+      int key_idx = -1;  // if none, just '\0' will do.
+      bool old = false;  // if it's still the keycode that's already taken care of
+      for(int i=0; i<3; i++) {
+        for(int j=0; j<3;j++) // if it's in pressed keys list then it's old.
+          if (packet.keycode[i] == pressed_keys[j]) old = true;
+        if (!old && packet.keycode[j]!='\0') key_idx = j;
+        old = false;
+      }
+      if (key_idx == -1) key = '\0';
+      else key = keycode_to_char(packet.keycode[0], packet.modifiers);
+
+      if (!key) goto out;
 
       if (key == '\t') {  // if it's a tab
         for (int i=0; i<TAB_SPACE; i++) print_char(' ', &msg_pos, &msgbuffer);
@@ -157,10 +171,8 @@ int main()
 
       print_char(key, &msg_pos, &msgbuffer);
 
-      //fbputs(keystate, 6, 0);
-      if (packet.keycode[0] == 0x29) { /* ESC pressed? */
-	break;
-      }
+out:
+  memcpy(pressed_keys, packet.keycode, sizeof(packet.keycode));
     }
   }
 
