@@ -9,15 +9,12 @@
 #define MAX_ROWS   24          /* Number of rows on the screen */
 #define MAX_COLS   64         /* Number of columns on the screen */
 
-// struct position
-// {
+struct position
+{
+    int row;
+    int col;
+};
 
-// };
-
-// struct special_keys
-// {
-
-// };
 
 extern int fbopen(void);
 extern void fbputchar(char, int, int);
