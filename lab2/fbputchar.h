@@ -49,6 +49,7 @@ extern void fbputchar(char, int, int);
 extern void fbputs(const char *, int, int);
 extern void put_line(char, int);
 extern void clear_screen();
+extern void clear_txt_box();
 extern void horizontal_line();
 extern void fbputs_wrap(const char *, struct position *);
 extern char *alloc_new_text_page();
