@@ -50,8 +50,8 @@ struct position text_pos = {
  * cursor for message box.
  */
 struct position msg_pos = {
-  .row = MSG_START_ROW;
-  .col = 0;
+  .row = MSG_START_ROW,
+  .col = 0,
 };
 
 struct msg_history msg_box_his = {
@@ -181,15 +181,15 @@ void *network_thread_f(void *ignored)
     if(text_pos.row+len/MAX_COLS>=MSG_START_ROW){
         // Copy to buffer
         memcpy(recvBuf,
-          msg_box_his.pages[msg_box_his.count-1]+(msg_pos.msg_row-1)*MAX_COLS,
-          (MSG_START_ROW-msg_pos.msg_row)*MAX_COLS
+          msg_box_his.pages[msg_box_his.count-1]+(txt_pos.row-1)*MAX_COLS,
+          (MSG_START_ROW-txt_pos.row)*MAX_COLS
         );
         // Allocate new page
         msg_box_his.pages[msg_box_his.count] = alloc_new_msg_page();
         ++msg_box_his.count;
         // Reset message cursor
-        msg_pos.msg_row = 1;
-        msg_pos.msg_col = 0;
+        txt_pos.row = 1;
+        txt_pos.col = 0;
     }
     fbputs_wrap(recvBuf, &msg_pos);
     memcpy(recvBuf+(MSG_START_ROW-text_pos.row)*MAX_COLS,
