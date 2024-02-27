@@ -17,6 +17,7 @@
 #include <sys/ioctl.h>
 
 #include <linux/fb.h>
+#include <string.h>
 
 #define FBDEV "/dev/fb0"
 
@@ -127,12 +128,50 @@ void fbputs(const char *s, int row, int col)
   while ((c = *s++) != 0) fbputchar(c, row, col++);
 }
 
-/* Same basic function as fbputs but can handle wrap around. */
+/* 
+ * Same basic function as fbputs but can handle wrap around. 
+ */
 void fbputs_wrap(const char *s, struct position *pos)
 {
   char c;
   int row = pos->row, col = pos->col;
-  while ((c = *s++)!=0) fbputchar(c, pos->row, pos->col);
+  int len = strlen(s);
+  while ((c = *s++)!=0){
+    fbputchar(c, row, col);
+	if(col>=64){
+      col=0;
+      ++row;
+    }
+    else
+      ++col;
+  }
+}
+
+/*
+ * Copy several lines of framebuffer
+ * srcStartLine - copy source start line (start from 0)
+ * dstStartLine - copy destination start line (start from 0)
+ */
+void fb_copy_line(int srcStartLine, int dstStartLine, int lineCount)
+{
+  if(srcStartLine==dstStartLine)
+	return;
+  if(srcStartLine<dstStartLine){
+    int tmp=srcStartLine;
+    srcStartLine=dstStartLine;
+    dstStartLine=tmp;
+  }
+
+  unsigned char *src = framebuffer + (srcStartLine * FONT_HEIGHT * 2 + fb_vinfo.yoffset) * fb_finfo.line_length;
+  unsigned char *dst = framebuffer + (dstStartLine * FONT_HEIGHT * 2 + fb_vinfo.yoffset) * fb_finfo.line_length;
+  if(dstStartLine+lineCount<srcStartLine){
+    memcpy(dst,src,fb_finfo.line_length * FONT_HEIGHT * 2 * lineCount);
+  }
+  else{
+    int len = fb_finfo.line_length * FONT_HEIGHT * 2 * (dstStartLine - srcStartLine);
+    memcpy(dst,src,len);
+    memcpy(src,src+len,fb_finfo.line_length * FONT_HEIGHT * 2 * (lineCount - dstStartLine + srcStartLine));
+  }
 }
 
 /* 8 X 16 console font from /lib/kbd/consolefonts/lat0-16.psfu.gz
