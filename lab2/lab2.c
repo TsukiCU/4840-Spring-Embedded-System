@@ -56,7 +56,7 @@ struct position msg_pos = {
   .buf_idx = 0,
 };
 
-struct msg_history msg_box_his = {
+struct msg_history text_box_his = {
   .count = 0,
 };
 
@@ -103,8 +103,13 @@ int main()
   }
 
   /* Allocate message box history buffer */
-  msg_box_his.pages[msg_box_his.count] = alloc_new_msg_page();
-  ++msg_box_his.count;
+  /*text_box_his.pages[text_box_his.count] = alloc_new_text_page();
+  if(!text_box_his.pages[text_box_his.count]){
+    perror(strerror(errno));
+    exit(1);
+  }*/
+  printf("alloc %p\n",text_box_his.pages[text_box_his.count]);
+  ++text_box_his.count;
 
   /* Create a TCP communications socket */
   if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
@@ -161,8 +166,8 @@ int main()
   pthread_join(network_thread, NULL);
 
   /* Clean message box buffer*/
-  for(int i=0;i<msg_box_his.count;++i)
-    free(msg_box_his.pages[i]);
+  for(int i=0;i<text_box_his.count;++i)
+    free(text_box_his.pages[i]);
 
   return 0;
 }
@@ -179,25 +184,32 @@ void *network_thread_f(void *ignored)
     fflush(stdout);
     len = strlen(recvBuf);
 
+	char *p = recvBuf;
     // If exceeds current page
     if(text_pos.row+len/MAX_COLS>=MSG_START_ROW){
+		printf("Buf exceed\n");
         // Copy to buffer
-        memcpy(recvBuf,
-          msg_box_his.pages[msg_box_his.count-1]+(text_pos.row-1)*MAX_COLS,
+        /*memcpy(text_box_his.pages[text_box_his.count-1]+(text_pos.row-1)*MAX_COLS,
+          p,
           (MSG_START_ROW-text_pos.row)*MAX_COLS
         );
         // Allocate new page
-        msg_box_his.pages[msg_box_his.count] = alloc_new_msg_page();
-        ++msg_box_his.count;
+        text_box_his.pages[text_box_his.count] = alloc_new_text_page();
+        ++text_box_his.count;*/
         // Reset message cursor
         text_pos.row = 1;
         text_pos.col = 0;
+	p = recvBuf+(MSG_START_ROW-text_pos.row)*MAX_COLS;
+	len-=(MSG_START_ROW-text_pos.row)*MAX_COLS;
     }
-    fbputs_wrap(recvBuf, &msg_pos);
-    memcpy(recvBuf+(MSG_START_ROW-text_pos.row)*MAX_COLS,
-      msg_box_his.pages[msg_box_his.count-1]+(text_pos.row-1)*MAX_COLS,
-      strlen(recvBuf)
-    );
+	printf("Msg copy text_box_his.count %d, offset %d, len %d\n",text_box_his.count,(text_pos.row-1)*MAX_COLS,len);
+	printf("Msg src %p\n",text_box_his.pages[text_box_his.count-1]);
+    /*memcpy(text_box_his.pages[text_box_his.count-1]+(text_pos.row-1)*MAX_COLS,
+      p,
+      len
+    );*/
+	printf("Msg print\n");
+    fbputs_wrap(recvBuf, &text_pos);
 	++text_pos.row;
     text_pos.col=0;
   }

@@ -11,9 +11,14 @@
 #define FBOPEN_BPP -5          /* Unexpected bits-per-pixel */
 #define MAX_ROWS   24          /* Number of rows on the screen */
 #define MAX_COLS   64          /* Number of columns on the screen */
+<<<<<<< HEAD
 #define MSG_START_ROW 21       /* Starting row of message box */
 #define MSG_END_ROW   22       /* End row of message box */
 #define MSG_BOX_LINES MSG_START_ROW-1
+=======
+#define MSG_START_ROW 21       /* Starting position of message box */
+#define TXT_BOX_LINES MSG_START_ROW-1
+>>>>>>> eed790e2a0640496a5214dcc36894990229d38e1
 #define TAB_SPACE   4          /* Space for TAB (4) */
 #define MESSAGE_SIZE 128       /* Set it 128. may nd modify */
 
@@ -51,7 +56,7 @@ extern void put_line(char, int);
 extern void clear_screen();
 extern void horizontal_line();
 extern void fbputs_wrap(const char *, struct position *);
-extern char *alloc_new_msg_page();
-extern void print_char(char, struct position *, char*);
+extern char *alloc_new_text_page();
+extern void print_char(char, struct position *, char *);
 
 #endif
