@@ -66,6 +66,7 @@ int fbopen()
 
   framebuffer = mmap(0, fb_finfo.smem_len, PROT_READ | PROT_WRITE,
 		     MAP_SHARED, fd, 0);
+  printf("smem_len %lu\n",fb_finfo.smem_len);
   if (framebuffer == (unsigned char *)-1) return FBOPEN_MMAP;
 
   return 0;
@@ -145,6 +146,8 @@ void fbputs_wrap(const char *s, struct position *pos)
     else
       ++col;
   }
+  pos->row = row;
+  pos->col = col;
 }
 
 /*

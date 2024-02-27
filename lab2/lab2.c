@@ -44,6 +44,14 @@ struct position text_pos = {
   .col = 0,
 };
 
+/*
+ * cursor for message box.
+ */
+struct position msg_pos = {
+  .row = 2;
+  .col = 0;
+};
+
 struct libusb_device_handle *keyboard;
 uint8_t endpoint_address;
 
@@ -149,7 +157,10 @@ void *network_thread_f(void *ignored)
   while ((n = read(sockfd, &recvBuf, BUFFER_SIZE - 1)) > 0 ) {
     recvBuf[n] = '\0';
     printf("%s", recvBuf);
-    fbputs_wrap(recvBuf, &text_pos);
+    fflush(stdout);
+    fbputs_wrap(recvBuf, &msg_pos);
+	//++msg_pos.row;
+    //msg_pos.col=0;
   }
 
   return NULL;
