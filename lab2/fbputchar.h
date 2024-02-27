@@ -7,7 +7,7 @@
 #define FBOPEN_MMAP -4         /* Couldn't mmap the framebuffer memory */
 #define FBOPEN_BPP -5          /* Unexpected bits-per-pixel */
 #define MAX_ROWS   24          /* Number of rows on the screen */
-#define MAX_COLS   64         /* Number of columns on the screen */
+#define MAX_COLS   64          /* Number of columns on the screen */
 
 struct position
 {
@@ -15,6 +15,19 @@ struct position
     int col;
 };
 
+/* Some special keys. */
+struct special_keys
+{
+    bool left_arrow;
+    bool right_arrow;
+    bool up_arrow;
+    bool down_arrow;
+    bool caps_lock;
+    bool backspace;
+    bool insert;
+    bool esc;
+    bool delete_;
+};
 
 extern int fbopen(void);
 extern void fbputchar(char, int, int);

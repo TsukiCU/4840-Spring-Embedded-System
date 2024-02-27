@@ -19,7 +19,7 @@
  * the chat server you are connecting to
  */
 /* arthur.cs.columbia.edu */
-#define SERVER_HOST "192.168.113.129"
+#define SERVER_HOST "128.59.19.114"
 #define SERVER_PORT 42000
 
 #define BUFFER_SIZE 128
@@ -33,9 +33,10 @@
  */
 
 int sockfd; /* Socket file descriptor */
+extern char keys[6];  /* keys pressed */
 
 /* initial position for text msg? */
-struct position text_pos {
+struct position text_pos = {
   .row = 8,
   .col = 0,
 };
@@ -46,9 +47,6 @@ uint8_t endpoint_address;
 pthread_t network_thread;
 void *network_thread_f(void *);
 pthread_mutex_t lock;   // lock for keyboard.
-
-void send_message()
-{}
 
 
 int main()
@@ -116,6 +114,11 @@ int main()
       sprintf(keystate, "%02x %02x %02x", packet.modifiers, packet.keycode[0],
 	      packet.keycode[1]);
       printf("%s\n", keystate);
+
+      /* HERE! */
+      for (uint8_t i=0; i<6; i++) keys[i] = keycode_to_char(packet->keycode[i], packet->modifiers);
+      fbputs(keys, 12, 0);
+
       fbputs(keystate, 6, 0);
       if (packet.keycode[0] == 0x29) { /* ESC pressed? */
 	break;
