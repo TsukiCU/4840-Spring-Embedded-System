@@ -18,6 +18,8 @@
 
 #include <linux/fb.h>
 #include <string.h>
+#include <stdio.h>
+#include <stdlib.h>
 
 #define FBDEV "/dev/fb0"
 
@@ -73,6 +75,7 @@ int fbopen()
 
   framebuffer = mmap(0, fb_finfo.smem_len, PROT_READ | PROT_WRITE,
 		     MAP_SHARED, fd, 0);
+  printf("smem_len %u\n",fb_finfo.smem_len);
   if (framebuffer == (unsigned char *)-1) return FBOPEN_MMAP;
 
   return 0;

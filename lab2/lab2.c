@@ -41,20 +41,20 @@ char msgbuffer[MESSAGE_SIZE];  /* Store the message to be sent. */
 
 /* initial position for text msg? */
 struct position text_pos = {
-  .txt_row = 8,
-  .txt_col = 0,
+  .row = 1,
+  .col = 0,
 };
 
 /*
  * cursor for message box.
  */
 struct position msg_pos = {
-  .msg_row = MSG_START_ROW;
-  .msg_col = 0;
+  .row = MSG_START_ROW;
+  .col = 0;
 };
 
 struct msg_history msg_box_his = {
-  .count = 0;
+  .count = 0,
 };
 
 struct libusb_device_handle *keyboard;
@@ -177,7 +177,7 @@ void *network_thread_f(void *ignored)
     len = strlen(recvBuf);
 
     // If exceeds current page
-    if(msg_pos.msg_row+len/MAX_COLS>=MSG_START_ROW){
+    if(text_pos.row+len/MAX_COLS>=MSG_START_ROW){
         // Copy to buffer
         memcpy(recvBuf,
           msg_box_his.pages[msg_box_his.count-1]+(msg_pos.msg_row-1)*MAX_COLS,
@@ -186,18 +186,17 @@ void *network_thread_f(void *ignored)
         // Allocate new page
         msg_box_his.pages[msg_box_his.count] = alloc_new_msg_page();
         ++msg_box_his.count;
-        recvBuf+=(MSG_START_ROW-msg_pos.msg_row)*MAX_COLS;
         // Reset message cursor
         msg_pos.msg_row = 1;
         msg_pos.msg_col = 0;
     }
     fbputs_wrap(recvBuf, &msg_pos);
-    memcpy(recvBuf,
-      msg_box_his.pages[msg_box_his.count-1]+(msg_pos.msg_row-1)*MAX_COLS,
+    memcpy(recvBuf+(MSG_START_ROW-text_pos.row)*MAX_COLS,
+      msg_box_his.pages[msg_box_his.count-1]+(text_pos.row-1)*MAX_COLS,
       strlen(recvBuf)
     );
-	++msg_pos.msg_row;
-    msg_pos.msg_col=0;
+	++text_pos.row;
+    text_pos.col=0;
   }
 
   return NULL;

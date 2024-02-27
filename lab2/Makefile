@@ -1,4 +1,4 @@
-CFLAGS = -Wall
+CFLAGS = -Wall -g
 
 OBJECTS = lab2.o fbputchar.o usbkeyboard.o
 
