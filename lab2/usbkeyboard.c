@@ -1,7 +1,7 @@
 #include "usbkeyboard.h"
 
 #include <stdio.h>
-#include <stdlib.h> 
+#include <stdlib.h>
 
 /* References on libusb 1.0 and the USB HID/keyboard protocol
  *
@@ -17,7 +17,7 @@ char ascii_kb_table_caps[];
 /*
  * Find and return a USB keyboard device or NULL if not found
  * The argument con
- * 
+ *
  */
 struct libusb_device_handle *openkeyboard(uint8_t *endpoint_address) {
   libusb_device **devs;
@@ -25,7 +25,7 @@ struct libusb_device_handle *openkeyboard(uint8_t *endpoint_address) {
   struct libusb_device_descriptor desc;
   ssize_t num_devs, d;
   uint8_t i, k;
-  
+
   /* Start the library */
   if ( libusb_init(NULL) < 0 ) {
     fprintf(stderr, "Error: libusb_init failed\n");
@@ -50,8 +50,8 @@ struct libusb_device_handle *openkeyboard(uint8_t *endpoint_address) {
 
     if (desc.bDeviceClass == LIBUSB_CLASS_PER_INTERFACE) {
       struct libusb_config_descriptor *config;
-      libusb_get_config_descriptor(dev, 0  , &config);
-      for (i = 0 ; i < config->bNumInterfaces ; i++)	       
+      libusb_get_config_descriptor(dev, 0, &config);
+      for (i = 0 ; i < config->bNumInterfaces ; i++)
 	for ( k = 0 ; k < config->interface[i].num_altsetting ; k++ ) {
 	  const struct libusb_interface_descriptor *inter =
 	    config->interface[i].altsetting + k ;
@@ -82,11 +82,11 @@ struct libusb_device_handle *openkeyboard(uint8_t *endpoint_address) {
   return keyboard;
 }
 
-char keycode_to_ascii(unsigned char keycode, int caps)
+char keycode_to_char(uint8_t keycode, uint8_t modifier)
 {
 	if(keycode > 0x67)
 		return 0;
-	return caps?ascii_kb_table_caps[keycode]:ascii_kb_table[keycode];
+	return SHIFT_PRESSED(modifier)?ascii_kb_table_caps[keycode]:ascii_kb_table[keycode];
 }
 
 char ascii_kb_table[] = {
@@ -121,3 +121,11 @@ char ascii_kb_table_caps[] = {
 '8', '9', '0', '.', 0  , 0  , 0  , '='
 };
 
+char keycode_to_char(uint8_t modifier, uint8_t keycode)
+{
+/* a->z : 0x04 -> 0x1d */
+  if (keycode >= 0x04 && keycode <= 0x1d) {
+    if (SHIFT_PRESSED(modifier)) return 'A' + (keycode - 0x04);
+    else return 'a' + (keycode - 0x04);
+  }
+}

@@ -12,8 +12,11 @@
 #define USB_LGUI   (1 << 3)
 #define USB_RCTRL  (1 << 4)
 #define USB_RSHIFT (1 << 5)
-#define USB_RALT   (1 << 6) 
+#define USB_RALT   (1 << 6)
 #define USB_RGUI   (1 << 7)
+
+#define SHIFT_PRESSED(X) ((X & (USB_LSHIFT | USB_RSHIFT)) > 0)
+#define CONTROL_PRESSED(X) ((X & (USB_LCTRL | USB_RCTRL)) > 0)
 
 struct usb_keyboard_packet {
   uint8_t modifiers;
@@ -25,5 +28,6 @@ struct usb_keyboard_packet {
    space to store an endpoint address.  Returns NULL if no keyboard
    device was found. */
 extern struct libusb_device_handle *openkeyboard(uint8_t *);
+extern char keycode_to_char(uint8_t keycode, uint8_t modifier);
 
 #endif
