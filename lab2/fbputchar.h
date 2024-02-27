@@ -10,6 +10,7 @@
 #define FBOPEN_BPP -5          /* Unexpected bits-per-pixel */
 #define MAX_ROWS   24          /* Number of rows on the screen */
 #define MAX_COLS   64          /* Number of columns on the screen */
+#define MSG_START_ROW 21       /* Starting position of message box */
 
 struct position
 {
@@ -34,7 +35,7 @@ struct special_keys
 extern int fbopen(void);
 extern void fbputchar(char, int, int);
 extern void fbputs(const char *, int, int);
-extern void put_line(char c, int row);
+extern void put_line(char, int);
 extern void clear_screen();
 extern void horizontal_line();
 extern void fbputs_wrap(const char *, struct position *);

@@ -43,7 +43,7 @@ void clear_screen()
 
 void horizontal_line()
 {
-  int place = 18;
+  int place = MSG_START_ROW;
   put_line('-', place);
 }
 
