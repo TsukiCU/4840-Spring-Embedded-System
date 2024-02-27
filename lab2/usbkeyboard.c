@@ -86,7 +86,7 @@ char keycode_to_ascii(unsigned char keycode, int caps)
 {
 	if(keycode > 0x67)
 		return 0;
-	return caps?:ascii_kb_table_caps[keycode]:ascii_kb_table[keycode];
+	return caps?ascii_kb_table_caps[keycode]:ascii_kb_table[keycode];
 }
 
 char ascii_kb_table[] = {
