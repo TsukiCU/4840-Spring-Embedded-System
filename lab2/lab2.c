@@ -19,7 +19,7 @@
  * the chat server you are connecting to
  */
 /* arthur.cs.columbia.edu */
-#define SERVER_HOST "192.168.113.129"
+#define SERVER_HOST "128.59.19.114"
 #define SERVER_PORT 42000
 
 #define BUFFER_SIZE 128
@@ -35,7 +35,7 @@
 int sockfd; /* Socket file descriptor */
 
 /* initial position for text msg? */
-struct position text_pos {
+struct position text_pos = {
   .row = 8,
   .col = 0,
 };
