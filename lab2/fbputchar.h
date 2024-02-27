@@ -50,7 +50,7 @@ extern void put_line(char, int);
 extern void clear_screen();
 extern void horizontal_line();
 extern void fbputs_wrap(const char *, struct position *);
-extern char *alloc_new_msg_page();
+extern char *alloc_new_text_page();
 extern void print_char(char, struct position *);
 
 #endif
