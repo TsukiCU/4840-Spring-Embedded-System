@@ -11,6 +11,9 @@
  * http://www.usb.org/developers/devclass_docs/Hut1_11.pdf
  */
 
+char ascii_kb_table[];
+char ascii_kb_table_caps[];
+
 /*
  * Find and return a USB keyboard device or NULL if not found
  * The argument con
@@ -47,7 +50,7 @@ struct libusb_device_handle *openkeyboard(uint8_t *endpoint_address) {
 
     if (desc.bDeviceClass == LIBUSB_CLASS_PER_INTERFACE) {
       struct libusb_config_descriptor *config;
-      libusb_get_config_descriptor(dev, 0, &config);
+      libusb_get_config_descriptor(dev, 0  , &config);
       for (i = 0 ; i < config->bNumInterfaces ; i++)	       
 	for ( k = 0 ; k < config->interface[i].num_altsetting ; k++ ) {
 	  const struct libusb_interface_descriptor *inter =
@@ -78,3 +81,43 @@ struct libusb_device_handle *openkeyboard(uint8_t *endpoint_address) {
 
   return keyboard;
 }
+
+char keycode_to_ascii(unsigned char keycode, int caps)
+{
+	if(keycode > 0x67)
+		return 0;
+	return caps?:ascii_kb_table_caps[keycode]:ascii_kb_table[keycode];
+}
+
+char ascii_kb_table[] = {
+0  , 0  , 0  , 0  , 'a', 'b', 'c', 'd',
+'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l',
+'m', 'n', 'o', 'p', 'q', 'r', 's', 't',
+'u', 'v', 'w', 'x', 'y', 'z', '1', '2',
+'3', '4', '5', '6', '7', '8', '9', '0',
+0  , 0  , 0  , 0  , 0  , '-', '=', '[',
+']','\\', 0  , ';','\'', '`', ',', '.',
+'/', 0  , 0  , 0  , 0  , 0  , 0  , 0  ,
+0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  ,
+0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  ,
+0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  ,
+0  , '1', '2', '3', '4', '5', '6', '7',
+'8', '9', '0', '.', 0  , 0  , 0  , '='
+};
+
+char ascii_kb_table_caps[] = {
+0  , 0  , 0  , 0  , 'A', 'B', 'C', 'D',
+'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
+'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T',
+'U', 'V', 'W', 'X', 'Y', 'Z', '!', '@',
+'#', '$', '%', '^', '&', '*', '(', ')',
+0  , 0  , 0  , 0  , 0  , '_', '+', '{',
+'}', '|', 0  , ':','\"', '~', '<', '>',
+'?', 0  , 0  , 0  , 0  , 0  , 0  , 0  ,
+0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  ,
+0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  ,
+0  , 0  , 0  , 0  , 0  , 0  , 0  , 0  ,
+0  , '1', '2', '3', '4', '5', '6', '7',
+'8', '9', '0', '.', 0  , 0  , 0  , '='
+};
+
