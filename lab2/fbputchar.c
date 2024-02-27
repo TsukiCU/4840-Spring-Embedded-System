@@ -52,7 +52,7 @@ void horizontal_line()
 /* Put char at a specific location with all the position modified. */
 void print_char(char key, struct position *pos)
 {
-  fbputchar(key, pos->msg_row, pos->msg_col);
+  fbputchar(key, pos->row, pos->col);
   pos->col++;
 }
 

@@ -7,6 +7,7 @@
  */
 #include "fbputchar.h"
 #include <stdio.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -141,7 +142,7 @@ int main()
       // for (uint8_t i=0; i<6; i++) keys[i] = keycode_to_char(packet.keycode[i], packet.modifiers);
       // fbputs(keys, 12, 0);
       char key;
-      key = keycode_to_char(packet.keycode[0]);
+      key = keycode_to_char(packet.keycode[0], packet.modifiers);
       print_char(key, &msg_pos);
 
       //fbputs(keystate, 6, 0);

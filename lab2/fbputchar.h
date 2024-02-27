@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifndef _FBPUTCHAR_H
 #define _FBPUTCHAR_H
