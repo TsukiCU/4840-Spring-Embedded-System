@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include "usbkeyboard.h"
 #include <pthread.h>
+#include "usb_hid_keys.h"
 
 /* Update SERVER_HOST to be the IP address of
  * the chat server you are connecting to
@@ -29,6 +30,7 @@
  *
  * http://beej.us/guide/bgnet/output/html/singlepage/bgnet.html
  * http://www.thegeekstuff.com/2011/12/c-socket-programming/
+ * https://gist.github.com/MightyPork/6da26e382a7ad91b5496ee55fdc73db2#file-usb_hid_keys-h
  *
  */
 
@@ -39,6 +41,7 @@ uint8_t endpoint_address;
 
 pthread_t network_thread;
 void *network_thread_f(void *);
+void handle_keyboard_input(struct usb_keyboard_packet *packet);
 pthread_mutex_t lock;   // lock for keyboard.
 
 int main()
@@ -134,5 +137,10 @@ void *network_thread_f(void *ignored)
   }
 
   return NULL;
+}
+
+void handle_keyboard_input(struct usb_keyboard_packet *packet)
+{
+  
 }
 
