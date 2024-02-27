@@ -11,6 +11,7 @@
 #define MAX_ROWS   24          /* Number of rows on the screen */
 #define MAX_COLS   64          /* Number of columns on the screen */
 #define MSG_START_ROW 21       /* Starting position of message box */
+#define MSG_BOX_LINES MSG_START_ROW-1
 
 struct position
 {
@@ -32,6 +33,12 @@ struct special_keys
     bool delete_;
 };
 
+struct msg_history
+{
+    char *pages[256];
+    int count;
+};
+
 extern int fbopen(void);
 extern void fbputchar(char, int, int);
 extern void fbputs(const char *, int, int);
@@ -39,5 +46,6 @@ extern void put_line(char, int);
 extern void clear_screen();
 extern void horizontal_line();
 extern void fbputs_wrap(const char *, struct position *);
+extern char *alloc_new_msg_page();
 
 #endif

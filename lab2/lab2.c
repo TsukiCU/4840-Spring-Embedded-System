@@ -48,8 +48,12 @@ struct position text_pos = {
  * cursor for message box.
  */
 struct position msg_pos = {
-  .row = 2;
+  .row = 1;
   .col = 0;
+};
+
+struct msg_history msg_box_his = {
+  .count = 0;
 };
 
 struct libusb_device_handle *keyboard;
@@ -93,6 +97,10 @@ int main()
     fprintf(stderr, "Did not find a keyboard\n");
     exit(1);
   }
+
+  /* Allocate message box history buffer */
+  msg_box_his.pages[msg_box_his.count] = alloc_new_msg_page();
+  ++msg_box_his.count;
 
   /* Create a TCP communications socket */
   if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
@@ -146,6 +154,10 @@ int main()
   /* Wait for the network thread to finish */
   pthread_join(network_thread, NULL);
 
+  /* Clean message box buffer*/
+  for(int i=0;i<msg_box_his.count;++i)
+    free(msg_box_his.pages[i]);
+
   return 0;
 }
 
@@ -153,14 +165,36 @@ void *network_thread_f(void *ignored)
 {
   char recvBuf[BUFFER_SIZE];
   int n;
+  int len;
   /* Receive data */
   while ((n = read(sockfd, &recvBuf, BUFFER_SIZE - 1)) > 0 ) {
     recvBuf[n] = '\0';
     printf("%s", recvBuf);
     fflush(stdout);
+    len = strlen(recvBuf);
+
+    // If exceeds current page
+    if(msg_pos.row+len/MAX_COLS>=MSG_START_ROW){
+        // Copy to buffer
+        memcpy(recvBuf,
+          msg_box_his.pages[msg_box_his.count-1]+(msg_pos.row-1)*MAX_COLS,
+          (MSG_START_ROW-msg_pos.row)*MAX_COLS
+        );
+        // Allocate new page
+        msg_box_his.pages[msg_box_his.count] = alloc_new_msg_page();
+        ++msg_box_his.count;
+        recvBuf+=(MSG_START_ROW-msg_pos.row)*MAX_COLS;
+        // Reset message cursor
+        msg_pos.row = 1;
+        msg_pos.row = 0;
+    }
     fbputs_wrap(recvBuf, &msg_pos);
-	//++msg_pos.row;
-    //msg_pos.col=0;
+    memcpy(recvBuf,
+      msg_box_his.pages[msg_box_his.count-1]+(msg_pos.row-1)*MAX_COLS,
+      strlen(recvBuf)
+    );
+	++msg_pos.row;
+    msg_pos.col=0;
   }
 
   return NULL;

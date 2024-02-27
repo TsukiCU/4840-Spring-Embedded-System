@@ -136,7 +136,6 @@ void fbputs_wrap(const char *s, struct position *pos)
 {
   char c;
   int row = pos->row, col = pos->col;
-  int len = strlen(s);
   while ((c = *s++)!=0){
     fbputchar(c, row, col);
 	if(col>=64){
@@ -175,6 +174,11 @@ void fb_copy_line(int srcStartLine, int dstStartLine, int lineCount)
     memcpy(dst,src,len);
     memcpy(src,src+len,fb_finfo.line_length * FONT_HEIGHT * 2 * (lineCount - dstStartLine + srcStartLine));
   }
+}
+
+char *alloc_new_msg_page()
+{
+  return malloc(MSG_BOX_LINES*MAX_COLS);
 }
 
 /* 8 X 16 console font from /lib/kbd/consolefonts/lat0-16.psfu.gz
