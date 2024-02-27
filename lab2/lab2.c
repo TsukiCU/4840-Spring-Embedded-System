@@ -121,8 +121,9 @@ int main()
       printf("%s\n", keystate);
 
       /* HERE! */
+      // storing content to keys?
       for (uint8_t i=0; i<6; i++) keys[i] = keycode_to_char(packet.keycode[i], packet.modifiers);
-      fbputs(keys, 12, 0);
+      // fbputs(keys, 12, 0);
 
       fbputs(keystate, 6, 0);
       if (packet.keycode[0] == 0x29) { /* ESC pressed? */
@@ -185,6 +186,6 @@ void *network_thread_s(void *msg)
 
 void handle_keyboard_input(struct usb_keyboard_packet *packet)
 {
-  
+
 }
 
