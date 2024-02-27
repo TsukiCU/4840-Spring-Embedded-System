@@ -58,7 +58,7 @@ void print_char(char key, struct position *pos, char *msg_buf)
   if (pos->row == MSG_END_ROW && pos->col == MAX_COLS-1) {
   msg_buf[pos->buf_idx] = key;
     // copy the second line up and set the second line empty.
-    for (int i=0; i<MAX_COLS; i++) fbputchar(msgbuffer[pos->buf_idx-MAX_COLS+i], pos->row-1, i);
+    for (int i=0; i<MAX_COLS; i++) fbputchar(msg_buf[pos->buf_idx-MAX_COLS+i], pos->row-1, i);
     put_line(pos->row, ' ');
     pos->col=0;
     pos->buf_idx-=MAX_COLS-1;
