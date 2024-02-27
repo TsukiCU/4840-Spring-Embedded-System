@@ -1,3 +1,5 @@
+#include <stdbool.h>
+
 #ifndef _FBPUTCHAR_H
 #define _FBPUTCHAR_H
 
@@ -35,5 +37,6 @@ extern void fbputs(const char *, int, int);
 extern void put_line(char c, int row);
 extern void clear_screen();
 extern void horizontal_line();
+extern void fbputs_wrap(const char *, struct position *);
 
 #endif

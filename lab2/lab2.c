@@ -49,6 +49,7 @@ uint8_t endpoint_address;
 
 pthread_t network_thread;
 void *network_thread_f(void *);
+void *network_thread_s(void *);
 void handle_keyboard_input(struct usb_keyboard_packet *packet);
 pthread_mutex_t lock;   // lock for keyboard.
 
@@ -120,7 +121,7 @@ int main()
       printf("%s\n", keystate);
 
       /* HERE! */
-      for (uint8_t i=0; i<6; i++) keys[i] = keycode_to_char(packet->keycode[i], packet->modifiers);
+      for (uint8_t i=0; i<6; i++) keys[i] = keycode_to_char(packet.keycode[i], packet.modifiers);
       fbputs(keys, 12, 0);
 
       fbputs(keystate, 6, 0);
@@ -153,7 +154,7 @@ void *network_thread_f(void *ignored)
   return NULL;
 }
 
-void async_send_message(const char *msg)
+void async_send_message(char *msg)
 {
   if(msg==NULL)
     return;
@@ -161,7 +162,7 @@ void async_send_message(const char *msg)
     return;
 
   /* Start the network thread for sending */
-  pthread_create(&network_thread, NULL, network_thread_s, msg);
+  pthread_create(&network_thread, NULL, network_thread_s, (void *)msg);
 }
 
 /*
@@ -175,9 +176,9 @@ void *network_thread_s(void *msg)
     perror(err);
 	// change error printing here
 	fbputs_wrap(err, 2, 0);
-  };
+  }
   else
-    print("Message sent: %s\n",p);
+    printf("Message sent: %s\n",p);
 
   return NULL;
 }
