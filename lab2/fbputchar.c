@@ -185,7 +185,9 @@ void fb_copy_line(int srcStartLine, int dstStartLine, int lineCount)
 
 char *alloc_new_text_page()
 {
-  return malloc(TXT_BOX_LINES*MAX_COLS);
+  char *mem =  malloc(TXT_BOX_LINES*MAX_COLS*sizeof(unsigned char));
+  printf("%p\n",mem);
+  return mem;
 }
 
 /* 8 X 16 console font from /lib/kbd/consolefonts/lat0-16.psfu.gz
