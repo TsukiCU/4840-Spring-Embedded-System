@@ -12,7 +12,7 @@
 #define MAX_ROWS   24          /* Number of rows on the screen */
 #define MAX_COLS   64          /* Number of columns on the screen */
 #define MSG_START_ROW 21       /* Starting position of message box */
-#define MSG_BOX_LINES MSG_START_ROW-1
+#define TXT_BOX_LINES MSG_START_ROW-1
 #define TAB_SPACE   4          /* Space for TAB (4) */
 #define MESSAGE_SIZE 128       /* Set it 128. may nd modify */
 
