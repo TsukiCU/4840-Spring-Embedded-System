@@ -32,7 +32,7 @@ struct special_keys
 extern int fbopen(void);
 extern void fbputchar(char, int, int);
 extern void fbputs(const char *, int, int);
-extern void put_line(char c, int row);
+extern void put_line(char, int);
 extern void clear_screen();
 extern void horizontal_line();
 
