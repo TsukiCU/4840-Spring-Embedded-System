@@ -302,30 +302,7 @@ int handle_key_press(char keycode, char modifiers)
 		new_pos.buf_idx = 0;
 		break;
 	case KEY_BACKSPACE:
-		if(!new_pos.buf_idx)
-			break;
-		// Move cursor
-		cursor_left(&new_pos);
-		msgbuffer[new_pos.buf_idx] = 0;
-		int idx = new_pos.buf_idx + 1;
-		// Current cursor at the end
-		if(msgbuffer[idx]==0)
-			fbputchar(' ', new_pos.row, new_pos.col);
-		else{
-			// Current cursor in the middle
-			// Delete the one before cursor
-			while(msgbuffer[idx]){
-				msgbuffer[idx-1]=msgbuffer[idx];
-				++idx;
-			}
-			msgbuffer[idx-1]=0;
-			// Refresh message box
-			struct position tmp;
-			tmp.col = 0;
-			tmp.row = MSG_START_ROW + 1;
-			for (int i=MSG_START_ROW+1; i<MSG_END_ROW; i++) put_line(' ', i);
-			fbputs_wrap(msgbuffer, &tmp, 0);
-		}
+		handle_back_space(keycode, modifiers, &new_pos);
 		break;
 	default:
 		print_char(keycode_to_char(keycode,modifiers), &new_pos, &msgbuffer);
@@ -335,6 +312,33 @@ int handle_key_press(char keycode, char modifiers)
 	return 0;
 }
 
+void handle_back_space(char keycode, char modifiers, struct *new_pos);
+{
+	if(!new_pos->buf_idx)
+		return;
+	// Move cursor
+	cursor_left(&new_pos);
+	msgbuffer[new_pos->buf_idx] = 0;
+	int idx = new_pos->buf_idx + 1;
+	// Current cursor at the end
+	if(msgbuffer[idx]==0)
+		fbputchar(' ', new_pos->row, new_pos->col);
+	else{
+		// Current cursor in the middle
+		// Delete the one before cursor
+		while(msgbuffer[idx]){
+			msgbuffer[idx-1]=msgbuffer[idx];
+			++idx;
+		}
+		msgbuffer[idx-1]=0;
+		// Refresh message box
+		struct position tmp;
+		tmp.col = 0;
+		tmp.row = MSG_START_ROW + 1;
+		for (int i=MSG_START_ROW+1; i<MSG_END_ROW; i++) put_line(' ', i);
+		fbputs_wrap(msgbuffer, &tmp, 0);
+	}
+}
 
 /*
  * Key release event handler
@@ -360,7 +364,7 @@ int handle_keyboard_input(struct usb_keyboard_packet *packet)
 	};
 	int r=0;
 	int i;
-	
+
 	// Compare last state with current state
 	for(i=0;i<6;++i){
 		// Last state reaches end first,
@@ -402,7 +406,7 @@ int is_my_address(char *buf)
 	int result = 0;
 	char ipAddress[INET_ADDRSTRLEN];
     int port;
-	
+
 	// Get port
     if (sscanf(buf, "%[^:]:%d", ipAddress, &port) != 2) {
         fprintf(stderr, "Error parsing IP address and port, %s\n",buf);
@@ -433,7 +437,7 @@ int is_my_address(char *buf)
 			}
         }
     }
-    
+
 	// Free the memory allocated by getifaddrs
     freeifaddrs(ifaddr);
 
@@ -494,7 +498,7 @@ void *network_thread_f(void *ignored)
 		if(text_box_his.curr<0){
 			text_box_his.curr=0;
 			reload_txt_box();
-		} 
+		}
 		if(text_box_his.count-2==text_box_his.curr){
 			// Reset message cursor
 			text_pos.row = 1;
@@ -575,7 +579,7 @@ void update_cursor(struct position *new_pos)
 	draw_cursor(&msg_pos, white);
 }
 
-/* 
+/*
  * Cursor moves left
  * Will change row,col,buf_idx
  * Will rollback to last row
@@ -597,7 +601,7 @@ void cursor_left(struct position *pos)
 	return;
 }
 
-/* 
+/*
  * Cursor moves right
  * Will change row,col,buf_idx
  * Will rolldown to next row
@@ -660,7 +664,7 @@ void print_char(char key, struct position *pos, char *msg_buf)
   fbputchar(key, pos->row, pos->col);
   // Cursor moves right
   cursor_right(pos);
-  
+
 // // just need to reset column.
 //   if (pos->col == MAX_COLS-1) {
 // 	msg_buf[pos->buf_idx++] = key;

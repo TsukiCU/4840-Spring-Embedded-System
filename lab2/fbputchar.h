@@ -67,5 +67,6 @@ extern char *alloc_new_text_page(struct msg_history *);
 void destroy_pages(struct msg_history *);
 extern void draw_cursor(struct position *, struct RGB888);
 extern void print_page_info(struct msg_history *);
+void handle_back_space(char, char, struct *);
 
 #endif
