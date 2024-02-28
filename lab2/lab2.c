@@ -84,7 +84,6 @@ void cursor_left(struct position *pos);
 void cursor_right(struct position *pos);
 void async_send_message(char *msg);
 int message_type(char *message);
-pthread_mutex_t lock;   // lock for keyboard.
 
 int main()
 {
@@ -163,7 +162,8 @@ int main()
 	/* shit code for testing functions.
 	 * if release: 00 00 00, set backspace_pressed to false.
 	 * else if backspace is still pressed, do nothing, let
-	 * child thread do its job.
+	 * child thread do its job. Main idea is to make sure the
+	 * only way to stop bs_continuous thread is to release bs.
 	 */
 	 if (nothing_pushed(&packet)) backspace_pressed = false;
 	  else if (backspace_pressed) continue;
