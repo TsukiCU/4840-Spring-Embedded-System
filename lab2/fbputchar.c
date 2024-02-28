@@ -49,6 +49,16 @@ void horizontal_line()
   put_line('-', place);
 }
 
+void print_page_info(struct msg_history *his)
+{
+	char str[19];
+	sprintf(str,"<--Page %3d/%-3d-->",(unsigned char)(his->curr+1),(unsigned char)his->count);
+	str[18]=0;
+
+	horizontal_line();
+	fbputs(str, MSG_START_ROW, MAX_COLS/2-9-1);
+}
+
 void clear_txt_box()
 {
   memset(framebuffer + (1 * FONT_HEIGHT * 2 + fb_vinfo.yoffset) * fb_finfo.line_length,

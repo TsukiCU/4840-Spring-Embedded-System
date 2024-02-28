@@ -88,7 +88,7 @@ int main()
 
   struct usb_keyboard_packet packet;
   int transferred;
-  char keystate[12];
+  // char keystate[12];
 
   memset(myAddr, 0, BUFFER_SIZE);
   memset(msgbuffer, 0, BUFFER_SIZE+1);
@@ -122,6 +122,7 @@ int main()
   }
   printf("alloc %p\n",text_box_his.pages[text_box_his.count-1]);
   text_box_his.curr=0;
+  print_page_info(&text_box_his);
 
   /* Create a TCP communications socket */
   if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
@@ -156,6 +157,7 @@ int main()
 	  int ret = handle_keyboard_input(&packet);
       if(ret){
 		if (ret == 0x29) { /* ESC pressed? */
+			clear_screen();
 			break;
 		}
 	  }
@@ -223,6 +225,7 @@ void reload_txt_box()
 			text_pos.col=0;
 		}
 	}
+	print_page_info(&text_box_his);
 }
 
 void page_left()
@@ -266,6 +269,25 @@ int handle_key_press(char keycode, char modifiers)
 			page_right();
 		else
 			cursor_right(&new_pos);
+		break;
+	case KEY_UP:
+		if(new_pos.row>MSG_START_ROW+1){
+			--new_pos.row;
+			new_pos.buf_idx-=MAX_COLS;
+		}
+		break;
+	case KEY_DOWN:
+		if(new_pos.row<MSG_END_ROW-1){
+			int len = strlen(msgbuffer);
+			if(new_pos.buf_idx+MAX_COLS>len){
+				new_pos.row = MSG_START_ROW+1+len/MAX_COLS;
+				new_pos.col = len%MAX_COLS;
+				new_pos.buf_idx=len;
+			}else{
+				++new_pos.row;
+				new_pos.buf_idx+=MAX_COLS;
+			}
+		}
 		break;
 	case KEY_TAB:
 		for (int i=0; i<TAB_SPACE; i++) print_char(' ', &new_pos, &msgbuffer);
@@ -478,11 +500,11 @@ void *network_thread_f(void *ignored)
 			text_pos.row = 1;
 			text_pos.col = 0;
 			++text_box_his.curr;
-			clear_txt_box();
+			reload_txt_box();
 		}
 		// If not at current page, do something
 		else {
-
+			print_page_info(&text_box_his);
 		}
 		text_box_his.line = 0;
     }
@@ -502,7 +524,7 @@ void *network_thread_f(void *ignored)
 		text_box_his.line = text_pos.row - 1;
 	}
 	else
-		text_box_his.line+=len/MAX_COLS;
+		text_box_his.line+=len/MAX_COLS+1;
   }
 
   return NULL;
@@ -610,6 +632,9 @@ void print_char(char key, struct position *pos, char *msg_buf)
 // 	msg_buf[pos->buf_idx--] = ' ';
 // 	return;
 //   }
+
+  if(key==0)
+	return;
 
   // if reach the end of the msg area then need a refresh.
   if (pos->row == MSG_END_ROW-1 && pos->col == MAX_COLS-1) {
