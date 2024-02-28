@@ -24,6 +24,10 @@
 #define KEY_MOD_RSHIFT 0x20
 #define KEY_MOD_RALT   0x40
 #define KEY_MOD_RMETA  0x80
+#define KEY_MOD_CTRL (KEY_MOD_LCTRL | KEY_MOD_RCTRL)
+#define KEY_MOD_SHIFT (KEY_MODE_LSHIFT | KEY_MOD_RSHIFT)
+#define KEY_MOD_ALT (KEY_MODE_LALT | KEY_MOD_RALT)
+#define KEY_MOD_META (KEY_MODE_LMETA | KEY_MOD_RMETA)
 
 /**
  * Scan codes - last N slots in the HID report (usually 6).
