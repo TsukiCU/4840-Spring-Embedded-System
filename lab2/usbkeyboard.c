@@ -82,11 +82,11 @@ struct libusb_device_handle *openkeyboard(uint8_t *endpoint_address) {
   return keyboard;
 }
 
-char keycode_to_char(uint8_t keycode, uint8_t modifier)
+char keycode_to_char(uint8_t keycode, uint8_t modifier, int caps)
 {
 	if(keycode > 0x67)
 		return 0;
-	return SHIFT_PRESSED(modifier)?ascii_kb_table_caps[keycode]:ascii_kb_table[keycode];
+	return (SHIFT_PRESSED(modifier) || caps) ? ascii_kb_table_caps[keycode]:ascii_kb_table[keycode];
 }
 
 char ascii_kb_table[] = {

@@ -28,6 +28,8 @@
 
 #define BUFFER_SIZE 128
 
+int caps_lock = 0; /* Caps lock is on? */
+
 /*
  * References:
  *
@@ -260,9 +262,12 @@ void page_right()
  */
 int handle_key_press(char keycode, char modifiers)
 {
-	printf("%02x pressed, modifier %02x\n",keycode,modifiers);
+	//printf("%02x pressed, modifier %02x\n",keycode,modifiers);
 	struct position new_pos = msg_pos;
 	switch (keycode) {
+	case KEY_CAPSLOCK:
+		caps_lock = 1 - caps_lock;
+		break;
 	case KEY_ESC:
 		return keycode;
 	case KEY_LEFT:
@@ -320,7 +325,7 @@ int handle_key_press(char keycode, char modifiers)
 			handle_back_space(keycode, modifiers, &new_pos);
 		break;
 	default:
-		print_char(keycode_to_char(keycode,modifiers), &new_pos, msgbuffer);
+		print_char(keycode_to_char(keycode, modifiers, caps_lock), &new_pos, msgbuffer);
 		break;
 	}
 	update_cursor(&new_pos);

@@ -18,6 +18,7 @@
 #define SHIFT_PRESSED(X) ((X & (USB_LSHIFT | USB_RSHIFT)) > 0)
 #define CONTROL_PRESSED(X) ((X & (USB_LCTRL | USB_RCTRL)) > 0)
 
+
 struct usb_keyboard_packet {
   uint8_t modifiers;
   uint8_t reserved;
@@ -28,6 +29,6 @@ struct usb_keyboard_packet {
    space to store an endpoint address.  Returns NULL if no keyboard
    device was found. */
 extern struct libusb_device_handle *openkeyboard(uint8_t *);
-extern char keycode_to_char(uint8_t keycode, uint8_t modifier);
+extern char keycode_to_char(uint8_t, uint8_t, int);
 
 #endif
