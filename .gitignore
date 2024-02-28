@@ -1,10 +1,3 @@
-lab1/c5_pin_model_dump.txt
-lab1/collatz.cpp
-lab1/lab1.qpf
-lab1/lab1.qsf
-lab1/lab1.sdc
-lab1/range.cpp
-lab1/range2.sv
-lab2/lab2
-lab2/lab2.o
-lab2/test.txt
+*.o
+*.exe
+test/

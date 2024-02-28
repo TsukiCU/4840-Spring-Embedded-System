@@ -5,3 +5,10 @@ db/
 incremental_db/
 manual/
 output_files/
+c5_pin_model_dump.txt
+collatz.cpp
+lab1.qpf
+lab1.qsf
+lab1.sdc
+range.cpp
+range2.sv
