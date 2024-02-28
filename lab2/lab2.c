@@ -31,7 +31,7 @@ volatile int backspace_pressed = 0;
 typedef struct {
 	char keycode;
 	char modifiers;
-	struct position** new_pos;
+	struct position* new_pos;
 } bs_param;
 
 /*
@@ -510,12 +510,14 @@ int message_type(char *message)
 
 void *bs_continuous(void *arg)
 {
-	printf("thread begin\n");
 	bs_param *args = (bs_param *)arg;
 
+	usleep(DELETE_INTERVAL*3);
+	printf("thread begin\n");
 	while (backspace_pressed) {
 		handle_back_space(args->keycode, args->modifiers, args->new_pos);
         usleep(DELETE_INTERVAL);
+		update_cursor(args->new_pos);
 	}
 
 	free(args);
