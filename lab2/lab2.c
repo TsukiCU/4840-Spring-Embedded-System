@@ -52,7 +52,7 @@ struct position text_pos = {
  * cursor for message box.
  */
 struct position msg_pos = {
-  .row = MSG_START_ROW + 1,
+  .row = MSG_START_ROW,
   .col = 0,
   .buf_idx = 0,
 };
@@ -286,7 +286,7 @@ void print_char(char key, struct position *pos, char *msg_buf)
     /* TODO: send message. */
     async_send_message(msgbuffer);
     for (int i=MSG_START_ROW; i<MSG_END_ROW; i++) put_line(' ', i);
-    pos->row = MSG_START_ROW + 1;
+    pos->row = MSG_START_ROW;
     pos->col = 0;
     pos->buf_idx = 0;
   }
