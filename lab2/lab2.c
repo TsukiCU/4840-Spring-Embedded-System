@@ -38,7 +38,7 @@
 
 int sockfd; /* Socket file descriptor */
 char keys[6];  /* keys pressed */
-char pressed_keys[6]  /* old ones */
+char pressed_keys[6];  /* old ones */
 char msgbuffer[MESSAGE_SIZE+1];  /* Store the message to be sent. last one is '\0'. */
 
 /* initial position for text msg? */
@@ -155,7 +155,8 @@ int main()
       int key_idx = -1;  // if none, just '\0' will do.
       bool old = false;  // if it's still the keycode that's already taken care of
       for(int i=0; i<3; i++) {
-        for(int j=0; j<3;j++) // if it's in pressed keys list then it's old.
+        int j;
+        for(j=0; j<3;j++) // if it's in pressed keys list then it's old.
           if (packet.keycode[i] == pressed_keys[j]) old = true;
         if (!old && packet.keycode[j]!='\0') key_idx = j;
         old = false;
