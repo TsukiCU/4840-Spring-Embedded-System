@@ -18,6 +18,7 @@
 #include "usb_hid_keys.h"
 #include <errno.h>
 #include <string.h>
+#include <ifaddrs.h>
 /* Update SERVER_HOST to be the IP address of
  * the chat server you are connecting to
  */
@@ -40,6 +41,7 @@ int sockfd; /* Socket file descriptor */
 char keys[6];  /* keys pressed */
 char pressed_keys[6];  /* old ones */
 char msgbuffer[MESSAGE_SIZE+1];  /* Store the message to be sent. last one is '\0'. */
+char myAddr[BUFFER_SIZE];
 
 /* initial position for text msg? */
 struct position text_pos = {
@@ -59,6 +61,7 @@ struct position msg_pos = {
 
 struct msg_history text_box_his = {
   .count = 0,
+  .curr = -1
 };
 
 struct libusb_device_handle *keyboard;
@@ -67,11 +70,15 @@ uint8_t endpoint_address;
 pthread_t network_thread;
 void *network_thread_f(void *);
 void *network_thread_s(void *);
-void handle_keyboard_input(struct usb_keyboard_packet *packet);
+int handle_keyboard_input(struct usb_keyboard_packet *packet);
 void print_char(char key, struct position *pos, char *msg_buf);
 void debug_save_previous_page(char *page, int lineLen, int lines);
+void update_cursor(struct position *new_pos);
+void cursor_left(struct position *pos);
+void cursor_right(struct position *pos);
+void async_send_message(char *msg);
+int message_type(char *message);
 pthread_mutex_t lock;   // lock for keyboard.
-
 
 int main()
 {
@@ -82,6 +89,9 @@ int main()
   struct usb_keyboard_packet packet;
   int transferred;
   char keystate[12];
+
+  memset(myAddr, 0, BUFFER_SIZE);
+  memset(msgbuffer, 0, BUFFER_SIZE+1);
 
   if ((err = fbopen()) != 0) {
     fprintf(stderr, "Error: Could not open framebuffer: %d\n", err);
@@ -105,13 +115,13 @@ int main()
   }
 
   /* Allocate message box history buffer */
-  text_box_his.pages[text_box_his.count] = alloc_new_text_page();
-  if(!text_box_his.pages[text_box_his.count]){
+  alloc_new_text_page(&text_box_his);
+  if(!text_box_his.pages[text_box_his.count-1]){
     perror(strerror(errno));
     exit(1);
   }
-  printf("alloc %p\n",text_box_his.pages[text_box_his.count]);
-  ++text_box_his.count;
+  printf("alloc %p\n",text_box_his.pages[text_box_his.count-1]);
+  text_box_his.curr=0;
 
   /* Create a TCP communications socket */
   if ( (sockfd = socket(AF_INET, SOCK_STREAM, 0)) < 0 ) {
@@ -143,37 +153,38 @@ int main()
 			      (unsigned char *) &packet, sizeof(packet),
 			      &transferred, 0);
     if (transferred == sizeof(packet)) {
-      sprintf(keystate, "%02x %02x %02x", packet.modifiers, packet.keycode[0],
-	      packet.keycode[1]);
-      printf("%s\n", keystate);
-
-    if (packet.keycode[0] == 0x29) { /* ESC pressed? */
-	break;
-      }
+	  int ret = handle_keyboard_input(&packet);
+      if(ret){
+		if (ret == 0x29) { /* ESC pressed? */
+			break;
+		}
+	  }
 
       /* HERE! */
-      char key;
-      int key_idx = -1;  // if none, just '\0' will do.
-      bool old = false;  // if it's still the keycode that's already taken care of
-      for(int i=0; i<3; i++) {
-        for(int j=0; j<3;j++) // if it's in pressed keys list then it's old.
-          if (packet.keycode[i] == pressed_keys[j]) old = true;
-        if (!old && packet.keycode[i]!='\0') key_idx = i;
-        old = false;
-      }
-      if (key_idx == -1) key = '\0';
-      else key = keycode_to_char(packet.keycode[key_idx], packet.modifiers);
+    //   char key;
+    //   int key_idx = -1;  // if none, just '\0' will do.
+    //   bool old = false;  // if it's still the keycode that's already taken care of
+	//   struct position new_msg_pos = msg_pos;
+    //   for(int i=0; i<3; i++) {
+    //     for(int j=0; j<3;j++) // if it's in pressed keys list then it's old.
+    //       if (packet.keycode[i] == pressed_keys[j]) old = true;
+    //     if (!old && packet.keycode[i]!='\0') key_idx = i;
+    //     old = false;
+    //   }
+    //   if (key_idx == -1) key = '\0';
+    //   else key = keycode_to_char(packet.keycode[key_idx], packet.modifiers);
 
-      if (!key) goto out;
+    //   if (!key) goto out;
 
-      if (key == '\t') {  // if it's a tab
-        for (int i=0; i<TAB_SPACE; i++) print_char(' ', &msg_pos, &msgbuffer);
-      }
+    //   if (key == '\t') {  // if it's a tab
+    //     for (int i=0; i<TAB_SPACE; i++) print_char(' ', &new_msg_pos, &msgbuffer);
+    //   }
 
-      print_char(key, &msg_pos, &msgbuffer);
+      //print_char(key, &new_msg_pos, &msgbuffer);
+	  //update_cursor(&new_msg_pos);
 
-out:
-  memcpy(pressed_keys, packet.keycode, sizeof(packet.keycode));
+// out:
+//   memcpy(pressed_keys, packet.keycode, sizeof(packet.keycode));
     }
   }
 
@@ -184,10 +195,230 @@ out:
   pthread_join(network_thread, NULL);
 
   /* Clean message box buffer*/
-  for(int i=0;i<text_box_his.count;++i)
-    free(text_box_his.pages[i]);
+  destroy_pages(&text_box_his);
 
   return 0;
+}
+
+void reload_txt_box()
+{
+	char *start=text_box_his.pages[text_box_his.curr];
+	int offset = 0;
+	text_pos.row = 1;
+	text_pos.col = 0;
+
+	clear_txt_box();
+	for(offset=0;offset<TXT_BOX_LINES*MAX_COLS;offset+=MAX_COLS){
+		if(offset>0)
+			if(start[offset-1]!=0)
+				continue;
+		fbputs_wrap(start+offset,&text_pos,message_type(start+offset));
+		if(text_pos.col){
+			++text_pos.row;
+			text_pos.col=0;
+		}
+	}
+}
+
+void page_left()
+{
+	printf("page left, curr %d\n",text_box_his.curr);
+	if(text_box_his.curr){
+		--text_box_his.curr;
+		reload_txt_box();
+	}
+}
+
+void page_right()
+{
+	printf("page right, curr %d\n",text_box_his.curr);
+	if(text_box_his.curr<text_box_his.count-1){
+		++text_box_his.curr;
+		reload_txt_box();
+	}
+}
+
+void remove_char(int idx)
+{
+	
+}
+
+int handle_key_press(char keycode, char modifiers)
+{
+	printf("%02x pressed, modifier %02x\n",keycode,modifiers);
+	struct position new_pos = msg_pos;
+	switch (keycode) {
+	case KEY_ESC:
+		return keycode;
+	case KEY_LEFT:
+		if(modifiers & KEY_MOD_CTRL)
+			page_left();
+		else
+			cursor_left(&new_pos);
+		break;
+	case KEY_RIGHT:
+		if(modifiers & KEY_MOD_CTRL)
+			page_right();
+		else
+			cursor_right(&new_pos);
+		break;
+	case KEY_TAB:
+		for (int i=0; i<TAB_SPACE; i++) print_char(' ', &new_pos, &msgbuffer);
+		break;
+	case KEY_ENTER:
+		// if it's enter, clear everything and send message.
+		async_send_message(msgbuffer);
+		// Clear message box
+		for (int i=MSG_START_ROW+1; i<MSG_END_ROW; i++) put_line(' ', i);
+		new_pos.row = MSG_START_ROW+1;
+		new_pos.col = 0;
+		new_pos.buf_idx = 0;
+		break;
+	case KEY_BACKSPACE:
+		if(!new_pos.buf_idx)
+			break;
+		// Move cursor
+		cursor_left(&new_pos);
+		msgbuffer[new_pos.buf_idx] = 0;
+		int idx = new_pos.buf_idx + 1;
+		// Current cursor at the end
+		if(msgbuffer[idx]==0)
+			fbputchar(' ', new_pos.row, new_pos.col);
+		else{
+			// Current cursor in the middle
+			// Delete the one before cursor
+			while(msgbuffer[idx]){
+				msgbuffer[idx-1]=msgbuffer[idx];
+				++idx;
+			}
+			msgbuffer[idx-1]=0;
+			// Refresh message box
+			struct position tmp;
+			tmp.col = 0;
+			tmp.row = MSG_START_ROW + 1;
+			for (int i=MSG_START_ROW+1; i<MSG_END_ROW; i++) put_line(' ', i);
+			fbputs_wrap(msgbuffer, &tmp, 0);
+		}
+		break;
+	default:
+		print_char(keycode_to_char(keycode,modifiers), &new_pos, &msgbuffer);
+		break;
+	}
+	update_cursor(&new_pos);
+	return 0;
+}
+
+int handle_key_release(char keycode, char modifiers)
+{
+	printf("%02x released, modifier %02x\n",keycode,modifiers);
+	return 0;
+}
+
+int handle_keyboard_input(struct usb_keyboard_packet *packet)
+{
+	static struct usb_keyboard_packet prev_state = {
+		.modifiers = 0,
+		.keycode = {0}
+	};
+	int r=0;
+	// Check Modifiers
+	/*if(prev_state.modifiers!=packet->modifiers){
+		if((~prev_state.modifiers) & packet->modifiers)
+			handle_key_press(char keycode)
+	}*/
+	int i;
+	for(i=0;i<6;++i){
+		if(prev_state.keycode[i]==0)
+			break;
+		// Key release
+		if(prev_state.keycode[i]!=packet->keycode[i]){
+			r = handle_key_release(prev_state.keycode[i],packet->modifiers);
+			prev_state = *packet;
+			return r;
+		}
+	}
+	if(i>=6)
+		goto ret;
+	// Key press
+	if(packet->keycode[i]!=0)
+		r = handle_key_press(packet->keycode[i],packet->modifiers);
+ret:
+	prev_state = *packet;
+	return r;
+}
+
+/*
+int is_my_address(char *buf)
+{
+	struct sockaddr_in my_addr;
+	struct ifaddrs *ifaddr, *ifa;
+	int result = 0;
+	char ipAddress[INET_ADDRSTRLEN];
+    int port;
+	
+	// Get port
+    if (sscanf(buf, "%[^:]:%d", ipAddress, &port) != 2) {
+        fprintf(stderr, "Error parsing IP address and port, %s\n",buf);
+        return 0;
+    }
+	// Get address
+	memset(&my_addr, 0, sizeof(my_addr));
+	my_addr.sin_family = AF_INET;
+	if (inet_pton(AF_INET, ipAddress, &my_addr.sin_addr) <= 0) {
+		fprintf(stderr, "Error: Could not convert IP \"%s\"\n", ipAddress);
+		return 0;
+	}
+
+    // Retrieve the list of interface addresses
+    if (getifaddrs(&ifaddr) == -1) {
+        perror("getifaddrs");
+        return 0;
+    }
+    // Iterate through the list
+    for (ifa = ifaddr; ifa != NULL; ifa = ifa->ifa_next) {
+        if (ifa->ifa_addr != NULL && ifa->ifa_addr->sa_family == AF_INET) {
+            struct sockaddr_in *addr = (struct sockaddr_in *)ifa->ifa_addr;
+			printf("%u:%u,%u:%u\n",addr->sin_addr.s_addr,addr->sin_port,my_addr.sin_addr.s_addr,my_addr.sin_port);
+            if(addr->sin_addr.s_addr==my_addr.sin_addr.s_addr&&addr->sin_port==my_addr.sin_port){
+				result = 1;
+				memcpy(myAddr, buf, BUFFER_SIZE);
+				break;
+			}
+        }
+    }
+    
+	// Free the memory allocated by getifaddrs
+    freeifaddrs(ifaddr);
+
+	return result;
+}*/
+
+int message_type(char *message)
+{
+	/*if(message==NULL)
+		return 0;
+	if(strlen(message)==0)
+		return 0;
+	if(message[0]!='<')
+		return 2;*/
+
+	/*
+	char buf[BUFFER_SIZE] = {0};
+	++message;
+	for(int i=0;i<BUFFER_SIZE-2;++i){
+		if(message[i]=='>'||message[i]==0)
+			break;
+		buf[i]=message[i];
+	}
+	buf[BUFFER_SIZE-1]=0;
+
+	if(myAddr[0])
+		return strcmp(buf,myAddr)!=0;
+
+	return is_my_address(buf);
+	*/
+
+	return 0;
 }
 
 void *network_thread_f(void *ignored)
@@ -198,42 +429,55 @@ void *network_thread_f(void *ignored)
   /* Receive data */
   while ((n = read(sockfd, &recvBuf, BUFFER_SIZE - 1)) > 0 ) {
     recvBuf[n] = '\0';
-    printf("%s", recvBuf);
+    printf("%s\n", recvBuf);
     fflush(stdout);
     len = strlen(recvBuf);
 
-	char *p = recvBuf;
     // If exceeds current page
-    if(text_pos.row+len/MAX_COLS>=MSG_START_ROW){
+    if(text_box_his.line+len/MAX_COLS>=TXT_BOX_LINES){
 		printf("Buf exceed\n");
         // Copy to buffer
-        memcpy(text_box_his.pages[text_box_his.count-1]+(text_pos.row-1)*MAX_COLS,
-          p,
-          (MSG_START_ROW-text_pos.row)*MAX_COLS
-        );
+        // memcpy(text_box_his.pages[text_box_his.count-1]+(text_box_his.line-1)*MAX_COLS,
+        //   recvBuf,
+        //   (MSG_START_ROW-text_box_his.line)*MAX_COLS
+        // );
 		debug_save_previous_page(text_box_his.pages[text_box_his.count-1], MAX_COLS, TXT_BOX_LINES);
         // Allocate new page
-        text_box_his.pages[text_box_his.count] = alloc_new_text_page();
-        ++text_box_his.count;
-		
-		p = recvBuf+(MSG_START_ROW-text_pos.row)*MAX_COLS;
-		len-=(MSG_START_ROW-text_pos.row)*MAX_COLS;
-        
-		// Reset message cursor
-        text_pos.row = 1;
-        text_pos.col = 0;
-        clear_txt_box();
+        alloc_new_text_page(&text_box_his);
+		if(text_box_his.curr<0){
+			text_box_his.curr=0;
+			reload_txt_box();
+		} 
+		if(text_box_his.count-2==text_box_his.curr){
+			// Reset message cursor
+			text_pos.row = 1;
+			text_pos.col = 0;
+			++text_box_his.curr;
+			clear_txt_box();
+		}
+		// If not at current page, do something
+		else {
+
+		}
+		text_box_his.line = 0;
     }
-	printf("Msg copy text_box_his.count %d, offset %d, len %d\n",text_box_his.count,(text_pos.row-1)*MAX_COLS,len);
-	printf("Msg src %p\n",text_box_his.pages[text_box_his.count-1]);
-    memcpy(text_box_his.pages[text_box_his.count-1]+(text_pos.row-1)*MAX_COLS,
-      p,
+	// printf("Msg copy text_box_his.count %d, offset %d, len %d\n",text_box_his.count,(text_pos.row-1)*MAX_COLS,len);
+	// printf("Msg src %p\n",text_box_his.pages[text_box_his.count-1]);
+    memcpy(text_box_his.pages[text_box_his.count-1]+text_box_his.line*MAX_COLS,
+      recvBuf,
       len
     );
-	printf("Msg print\n");
-    fbputs_wrap(recvBuf, &text_pos);
-	++text_pos.row;
-    text_pos.col=0;
+	// At current page, print new message.
+	if(text_box_his.count-1==text_box_his.curr){
+		fbputs_wrap(recvBuf, &text_pos, message_type(recvBuf));
+		if(text_pos.col){
+			++text_pos.row;
+			text_pos.col=0;
+		}
+		text_box_his.line = text_pos.row - 1;
+	}
+	else
+		text_box_his.line+=len/MAX_COLS;
   }
 
   return NULL;
@@ -268,9 +512,46 @@ void *network_thread_s(void *msg)
   return NULL;
 }
 
-void handle_keyboard_input(struct usb_keyboard_packet *packet)
+void update_cursor(struct position *new_pos)
 {
+	struct RGB888 black = {0,0,0},
+				  white = {255,255,255};
+	draw_cursor(&msg_pos, black);
+	msg_pos=*new_pos;
+	draw_cursor(&msg_pos, white);
+}
 
+void cursor_left(struct position *pos)
+{
+    // if it's the first row, first col
+    if (pos->row == MSG_START_ROW+1 && pos->col == 0) return;
+	// second row, first col
+    else if (pos->col == 0) {
+      pos->row--;
+      pos->col = MAX_COLS-1;
+	  pos->buf_idx--;
+	  return;
+    }
+	pos->col--;
+	pos->buf_idx--;
+	return;
+}
+
+void cursor_right(struct position *pos)
+{
+	// End of the message
+	if(pos->buf_idx+1>=BUFFER_SIZE)
+		return;
+	if(msgbuffer[pos->buf_idx]==0)
+		return;
+	// first row, last col
+	if (pos->row == MSG_START_ROW+1 && pos->col == MAX_COLS - 1){
+		++pos->row;
+		pos->col=0;
+	}
+	else
+		++pos->col;
+	++pos->buf_idx;
 }
 
 /* The buffer for message box is only 128 bytes in length.
@@ -279,57 +560,45 @@ void handle_keyboard_input(struct usb_keyboard_packet *packet)
 void print_char(char key, struct position *pos, char *msg_buf)
 {
   // if it's backspace
-  if (key == '\b') {
-  // if it's the first row
-    if (pos->row == MSG_START_ROW+1 && pos->col == 0) return;
-  // if it's the second row, return to the ending point of the first row.
-    else if (pos->col == 0) {
-      pos->row--;
-      pos->col = MAX_COLS-1;
-      fbputchar(' ', pos->row, pos->col);
-      msg_buf[pos->buf_idx--] = ' ';
-    }
-    else {
-      fbputchar(' ', pos->row, pos->col-1);
-      pos->col--;
-      msg_buf[pos->buf_idx--] = ' ';
-    }
-  }
-
-  // if it's enter, clear everything and send message.
-  else if (key == '\n') {
-    async_send_message(msgbuffer);
-    for (int i=MSG_START_ROW+1; i<MSG_END_ROW; i++) put_line(' ', i);
-    pos->row = MSG_START_ROW+1;
-    pos->col = 0;
-    pos->buf_idx = 0;
-  }
-
+//   if (key == '\b') {
+// 	cursor_left(pos);
+// 	fbputchar(' ', pos->row, pos->col);
+// 	msg_buf[pos->buf_idx--] = ' ';
+// 	return;
+//   }
 // if reach the end of the msg area then need a refresh.
-  else if (pos->row == MSG_END_ROW-1 && pos->col == MAX_COLS-1) {
+  if (pos->row == MSG_END_ROW-1 && pos->col == MAX_COLS-1) {
+	// Set last value first
+	msg_buf[pos->buf_idx] = key;
     // copy the second line up and set the second line empty.
-    for (int i=0; i<MAX_COLS; i++) fbputchar(msg_buf[pos->buf_idx-MAX_COLS+i], pos->row-1, i);
-    put_line(' ', pos->row);
-    pos->col=0;
-    pos->buf_idx-=MAX_COLS-1;
-    msg_buf[pos->buf_idx] = key;
-    fbputchar(key, pos->row, pos->col);
-    pos->col++;
+	memcpy(msg_buf, msg_buf+MAX_COLS, MAX_COLS);
+	memset(msg_buf+MAX_COLS, 0, MAX_COLS);
+	// Print first line
+	for (int i=0; i<MAX_COLS; i++) fbputchar(msg_buf[i], pos->row-1, i);
+	// Clear second line
+	put_line(' ', pos->row);
+	// Set position
+	pos->row = MSG_START_ROW+1;
+	pos->col = MAX_COLS - 1;
+	pos->buf_idx = MAX_COLS - 1;
   }
-// just need to reset column.
-  else if (pos->col == MAX_COLS-1) {
-  msg_buf[pos->buf_idx++] = key;
-    pos->col = 0;
-    pos->row += 1;
-    fbputchar(key, pos->row, pos->col);
-    pos->col++;
-  }
-// nothing special, just put a character here.
-  else {
-  msg_buf[pos->buf_idx++] = key;
-    fbputchar(key, pos->row, pos->col);
-    pos->col++;
-  }
+  msg_buf[pos->buf_idx] = key;
+  fbputchar(key, pos->row, pos->col);
+  cursor_right(pos);
+  
+// // just need to reset column.
+//   if (pos->col == MAX_COLS-1) {
+// 	msg_buf[pos->buf_idx++] = key;
+// 	fbputchar(key, pos->row, pos->col);
+// 	pos->col = 0;
+// 	pos->row += 1;
+//   }
+// // nothing special, just put a character here.
+//   else {
+//   msg_buf[pos->buf_idx++] = key;
+//     fbputchar(key, pos->row, pos->col);
+//     pos->col++;
+//   }
 }
 
 void debug_save_previous_page(char *page, int lineLen, int lines)
@@ -340,8 +609,12 @@ void debug_save_previous_page(char *page, int lineLen, int lines)
 	for(int i=0;i<lines;++i){
 		memcpy(buf, page+lineLen*i, lineLen);
 		buf[lineLen]=0;
-		fprintf(fp, "%s\n",buf);
+		if(buf[strlen(buf)-1]=='\n')
+			fprintf(fp, "%s",buf);
+		else
+			fprintf(fp, "%s\n",buf);
 	}
 	fprintf(fp,"\n");
 	fclose(fp);
+	free(buf);
 }
