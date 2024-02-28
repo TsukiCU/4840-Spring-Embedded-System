@@ -67,6 +67,7 @@ struct msg_history text_box_his = {
 struct libusb_device_handle *keyboard;
 uint8_t endpoint_address;
 uint8_t hold_key;
+uint8_t hold_modifiers;
 
 pthread_t network_thread;
 pthread_t network_thread_send;
@@ -308,7 +309,15 @@ int handle_key_press(char keycode, char modifiers)
 		new_pos.buf_idx = 0;
 		break;
 	case KEY_BACKSPACE:
-		handle_back_space(keycode, modifiers, &new_pos);
+		if (CONTROL_PRESSED(modifiers)) {
+			put_line(' ', MSG_START_ROW+1);
+			put_line(' ', MSG_START_ROW+2);
+			memset(msgbuffer, 0, BUFFER_SIZE+1);
+			new_pos.col = 0;
+			new_pos.row = MSG_START_ROW+1;
+		}
+		else
+			handle_back_space(keycode, modifiers, &new_pos);
 		break;
 	default:
 		print_char(keycode_to_char(keycode,modifiers), &new_pos, msgbuffer);
@@ -321,29 +330,34 @@ int handle_key_press(char keycode, char modifiers)
 void *keyhold_thread_f(void *args)
 {
 	usleep(500*1000);
+	printf("Thread arg %02x %02x\n",hold_key,hold_modifiers);
 
 	while(1){
-        handle_key_press(args[0],args[1]);
-        usleep(100*1000);
+        handle_key_press(hold_key,hold_modifiers);
+        usleep(KEY_HOLD_INTERVAL*1000);
     }
     return NULL;
 }
 
 void release_key_hold()
 {
-	if(keyhold_thread)
+	if(keyhold_thread){
 		pthread_cancel(keyhold_thread);
+		pthread_join(keyhold_thread, NULL);
+	}
     keyhold_thread = 0;
     hold_key = 0;
+	printf("Thread released!\n");
 }
 
 void handle_key_hold(char keycode, char modifiers)
 {
-    char args[2] = {keycode,modifiers};
-
 	release_key_hold();
+
     hold_key = keycode;
-    pthread_create(&keyhold_thread, NULL, keyhold_thread_f, (void *)args);
+	hold_modifiers = modifiers;
+    pthread_create(&keyhold_thread, NULL, keyhold_thread_f, NULL);
+	printf("Thread created! %02x, %02x\n",keycode,modifiers);
 }
 
 void handle_back_space(char keycode, char modifiers, struct position *new_pos)
@@ -438,8 +452,10 @@ int handle_keyboard_input(struct usb_keyboard_packet *packet)
 	if(i>=6)
 		goto ret;
 	// Key press
-	if(packet->keycode[i]!=0)
+	if(packet->keycode[i]!=0){
 		r = handle_key_press(packet->keycode[i],packet->modifiers);
+		handle_key_hold(packet->keycode[i],packet->modifiers);
+	}
 ret:
 	// Save last status.
 	prev_state = *packet;

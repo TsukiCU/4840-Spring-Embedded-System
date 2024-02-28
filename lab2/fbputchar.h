@@ -16,26 +16,13 @@
 #define TXT_BOX_LINES (MSG_START_ROW-1)
 #define TAB_SPACE   4          /* Space for TAB (4) */
 #define MESSAGE_SIZE 128       /* Set it 128. may nd modify */
+#define KEY_HOLD_INTERVAL 50   /* keyboard interval in ms. */
 
 struct position
 {
     uint8_t row;
     uint8_t col;
     uint8_t buf_idx;
-};
-
-/* Some special keys. */
-struct special_keys
-{
-    bool left_arrow;
-    bool right_arrow;
-    bool up_arrow;
-    bool down_arrow;
-    bool caps_lock;
-    bool backspace;
-    bool insert;
-    bool esc;
-    bool delete_;
 };
 
 struct RGB888
