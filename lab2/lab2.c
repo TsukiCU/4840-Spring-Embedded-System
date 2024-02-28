@@ -294,14 +294,11 @@ void print_char(char key, struct position *pos, char *msg_buf)
   else if (pos->row == MSG_END_ROW-1 && pos->col == MAX_COLS-1) {
     // copy the second line up and set the second line empty.
     for (int i=0; i<MAX_COLS; i++) fbputchar(msg_buf[pos->buf_idx-MAX_COLS+i], pos->row-1, i);
-    printf("1 success!\n");
-    put_line(pos->row, ' ');
+    put_line(' ', pos->row);
     pos->col=0;
     pos->buf_idx-=MAX_COLS-1;
-    printf("2 success!\n");
     msg_buf[pos->buf_idx] = key;
     fbputchar(key, pos->row, pos->col);
-    printf("3 success!\n");
     pos->col++;
   }
 // just need to reset column.
