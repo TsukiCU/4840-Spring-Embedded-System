@@ -215,11 +215,13 @@ void *network_thread_f(void *ignored)
         // Allocate new page
         text_box_his.pages[text_box_his.count] = alloc_new_text_page();
         ++text_box_his.count;
-        // Reset message cursor
+		
+		p = recvBuf+(MSG_START_ROW-text_pos.row)*MAX_COLS;
+		len-=(MSG_START_ROW-text_pos.row)*MAX_COLS;
+        
+		// Reset message cursor
         text_pos.row = 1;
         text_pos.col = 0;
-	p = recvBuf+(MSG_START_ROW-text_pos.row)*MAX_COLS;
-	len-=(MSG_START_ROW-text_pos.row)*MAX_COLS;
         clear_txt_box();
     }
 	printf("Msg copy text_box_his.count %d, offset %d, len %d\n",text_box_his.count,(text_pos.row-1)*MAX_COLS,len);
