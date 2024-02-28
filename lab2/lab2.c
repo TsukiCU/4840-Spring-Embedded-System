@@ -313,7 +313,7 @@ int handle_key_press(char keycode, char modifiers)
 		}
 		break;
 	case KEY_TAB:
-		for (int i=0; i<TAB_SPACE; i++) print_char(' ', &new_pos, &msgbuffer);
+		for (int i=0; i<TAB_SPACE; i++) print_char(' ', &new_pos, msgbuffer);
 		break;
 	case KEY_ENTER:
 		// if it's enter, clear everything and send message.
@@ -341,7 +341,7 @@ int handle_key_press(char keycode, char modifiers)
 		}
 		break;
 	default:
-		print_char(keycode_to_char(keycode,modifiers), &new_pos, &msgbuffer);
+		print_char(keycode_to_char(keycode,modifiers), &new_pos, msgbuffer);
 		break;
 	}
 	update_cursor(&new_pos);
@@ -400,6 +400,11 @@ int handle_keyboard_input(struct usb_keyboard_packet *packet)
 	};
 	int r=0;
 	int i;
+
+	printf("code:");
+	for(int i=0;i<6;++i)
+		printf("%02x ",packet->keycode[i]);
+	printf("\n");
 
 	// Compare last state with current state
 	for(i=0;i<6;++i){
@@ -709,6 +714,17 @@ void print_char(char key, struct position *pos, char *msg_buf)
 	pos->buf_idx = MAX_COLS - 1;
   }
   // TODO: when cursor is in the middle, insert values
+  else if (pos->buf_idx<strlen(msg_buf)){
+	int i=strlen(msg_buf);
+	struct position p = *pos;
+	if(i>BUFFER_SIZE-2)
+		i=BUFFER_SIZE-2;
+	for(;i>pos->buf_idx;--i){
+		msg_buf[i]=msg_buf[i-1];
+	}
+	//cursor_right(&p);
+	fbputs_wrap(msg_buf+pos->buf_idx, &p, 0);
+  }
 
   // Set value to buffer
   msg_buf[pos->buf_idx] = key;
