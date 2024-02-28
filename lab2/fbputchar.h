@@ -16,6 +16,8 @@
 #define TXT_BOX_LINES (MSG_START_ROW-1)
 #define TAB_SPACE   4          /* Space for TAB (4) */
 #define MESSAGE_SIZE 128       /* Set it 128. may nd modify */
+#define DELETE_INTERVAL 100000 /* Usleep interval */
+
 
 struct position
 {
@@ -67,6 +69,7 @@ extern char *alloc_new_text_page(struct msg_history *);
 void destroy_pages(struct msg_history *);
 extern void draw_cursor(struct position *, struct RGB888);
 extern void print_page_info(struct msg_history *);
-void handle_back_space(char, char, struct position*);
+extern void handle_back_space(char, char, struct position*);
+void *bs_continuous(void *arg);
 
 #endif
