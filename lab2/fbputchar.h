@@ -26,20 +26,6 @@ struct position
     uint8_t buf_idx;
 };
 
-/* Some special keys. */
-struct special_keys
-{
-    bool left_arrow;
-    bool right_arrow;
-    bool up_arrow;
-    bool down_arrow;
-    bool caps_lock;
-    bool backspace;
-    bool insert;
-    bool esc;
-    bool delete_;
-};
-
 struct RGB888
 {
 	uint8_t R;
