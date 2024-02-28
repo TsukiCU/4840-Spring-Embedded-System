@@ -166,7 +166,6 @@ int main()
       if (!key) goto out;
 
       if (key == '\t') {  // if it's a tab
-      printf("here's tab!\n");
         for (int i=0; i<TAB_SPACE; i++) print_char(' ', &msg_pos, &msgbuffer);
       }
 
@@ -277,10 +276,20 @@ void print_char(char key, struct position *pos, char *msg_buf)
 {
   // if it's backspace
   if (key == '\b') {
-  printf("here's backspace!\n");
-    fbputchar(' ', pos->row, pos->col-1);
-    pos->col--;
-    msg_buf[pos->buf_idx--] = ' ';
+  // if it's the first row
+    if (pos->row == MSG_START_ROW+1 && pos->col == 0) return;
+  // if it's the second row, return to the ending point of the first row.
+    else if (pos->col == 0) {
+      pos->row--;
+      pos->col = MAX_COLS-1;
+      fbputchar(' ', pos->row, pos->col);
+      msg_buf[pos->buf_idx--] = ' ';
+    }
+    else {
+      fbputchar(' ', pos->row, pos->col-1);
+      pos->col--;
+      msg_buf[pos->buf_idx--] = ' ';
+    }
   }
 
   // if it's enter, clear everything and send message.
@@ -305,19 +314,17 @@ void print_char(char key, struct position *pos, char *msg_buf)
   }
 // just need to reset column.
   else if (pos->col == MAX_COLS-1) {
-  msg_buf[pos->buf_idx] = key;
+  msg_buf[pos->buf_idx++] = key;
     pos->col = 0;
     pos->row += 1;
     fbputchar(key, pos->row, pos->col);
     pos->col++;
-    pos->buf_idx++;
   }
 // nothing special, just put a character here.
   else {
-  msg_buf[pos->buf_idx] = key;
+  msg_buf[pos->buf_idx++] = key;
     fbputchar(key, pos->row, pos->col);
     pos->col++;
-    pos->buf_idx++;
   }
 }
 
