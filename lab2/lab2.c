@@ -27,6 +27,12 @@
 #define SERVER_PORT 42000
 
 #define BUFFER_SIZE 128
+volatile int backspace_pressed = 0;
+typedef struct {
+	char keycode;
+	char modifers;
+	struct position** new_pos;
+} bs_param;
 
 /*
  * References:
@@ -154,6 +160,13 @@ int main()
 			      (unsigned char *) &packet, sizeof(packet),
 			      &transferred, 0);
     if (transferred == sizeof(packet)) {
+	/* shit code for testing functions.
+	 * if release: 00 00 00, set backspace_pressed to false.
+	 * else if backspace is still pressed, do nothing, let
+	 * child thread do its job.
+	 */
+	 if (nothing_pushed(&packet)) backspace_pressed = false;
+	  else if (backspace_pressed) continue;
 	  int ret = handle_keyboard_input(&packet);
       if(ret){
 		if (ret == 0x29) { /* ESC pressed? */
@@ -202,6 +215,17 @@ int main()
   return 0;
 }
 
+bool nothing_pushed(struct usb_keyboard_packet* packet)
+{
+	// all zero?
+	if (packet->modifiers != 0 || packet->reserved != 0)
+        return false;
+	for (int i = 0; i < 6; ++i)
+        if (packet->keycode[i] != 0)
+            return false;
+
+	return true;
+}
 
 /*
  * Reload text box
@@ -302,7 +326,20 @@ int handle_key_press(char keycode, char modifiers)
 		new_pos.buf_idx = 0;
 		break;
 	case KEY_BACKSPACE:
-		handle_back_space(keycode, modifiers, &new_pos);
+		if (!backspace_pressed) {
+		// likely. handle this once, start the thread.
+			handle_back_space(keycode, modifiers, &new_pos);
+			backspace_pressed = true;
+
+			bs_param *params = malloc(sizeof(bs_param));
+			params->keycode = keycode;
+        	params->modifiers = modifiers;
+        	params->new_pos = &new_pos;
+
+			pthread_t back;
+			pthread_create(&back, NULL, bs_continuous, params);
+			pthread_detach(back);  // no need waiting around.
+		}
 		break;
 	default:
 		print_char(keycode_to_char(keycode,modifiers), &new_pos, &msgbuffer);
@@ -312,12 +349,12 @@ int handle_key_press(char keycode, char modifiers)
 	return 0;
 }
 
-void handle_back_space(char keycode, char modifiers, struct *new_pos);
+void handle_back_space(char keycode, char modifiers, struct position *new_pos);
 {
 	if(!new_pos->buf_idx)
 		return;
 	// Move cursor
-	cursor_left(&new_pos);
+	cursor_left(new_pos);
 	msgbuffer[new_pos->buf_idx] = 0;
 	int idx = new_pos->buf_idx + 1;
 	// Current cursor at the end
@@ -470,6 +507,19 @@ int message_type(char *message)
 	*/
 
 	return 0;
+}
+
+void *bs_continuous(void *arg)
+{
+	bs_param *args = (bs_param *)arg;
+
+	while (backspace_pressed) {
+		handle_back_space(args->keycode, args->modifiers, args->new_pos);
+        usleep(DELETE_INTERVAL);
+	}
+
+	free(args);
+	pthread_exit(NULL);
 }
 
 void *network_thread_f(void *ignored)
