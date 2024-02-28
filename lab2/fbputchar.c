@@ -148,13 +148,13 @@ void fbputs_wrap(const char *s, struct position *pos)
   char c;
   int row = pos->row, col = pos->col;
   while ((c = *s++)!=0){
-    fbputchar(c, row, col);
-	if(col>=64){
+    if(col>=64){
       col=0;
       ++row;
     }
     else
       ++col;
+    fbputchar(c, row, col);
   }
 }
 
