@@ -282,8 +282,7 @@ void print_char(char key, struct position *pos, char *msg_buf)
   }
 
   // if it's enter, clear everything and send message.
-  if (key == '\n') {
-    /* TODO: send message. */
+  else if (key == '\n') {
     async_send_message(msgbuffer);
     for (int i=MSG_START_ROW; i<MSG_END_ROW; i++) put_line(' ', i);
     pos->row = MSG_START_ROW;
@@ -293,6 +292,7 @@ void print_char(char key, struct position *pos, char *msg_buf)
 
 // if reach the end of the msg area then need a refresh.
   else if (pos->row == MSG_END_ROW-1 && pos->col == MAX_COLS-1) {
+  printf("enter 1 !!!\n");
     // copy the second line up and set the second line empty.
     for (int i=0; i<MAX_COLS; i++) fbputchar(msg_buf[pos->buf_idx-MAX_COLS+i], pos->row-1, i);
     put_line(pos->row, ' ');
@@ -304,6 +304,7 @@ void print_char(char key, struct position *pos, char *msg_buf)
   }
 // just need to reset column.
   else if (pos->col == MAX_COLS-1) {
+  printf("enter 2 !!!\n");
   msg_buf[pos->buf_idx] = key;
     pos->col = 0;
     pos->row += 1;
