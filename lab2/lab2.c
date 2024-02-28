@@ -284,8 +284,8 @@ void print_char(char key, struct position *pos, char *msg_buf)
   // if it's enter, clear everything and send message.
   else if (key == '\n') {
     async_send_message(msgbuffer);
-    for (int i=MSG_START_ROW; i<MSG_END_ROW; i++) put_line(' ', i);
-    pos->row = MSG_START_ROW;
+    for (int i=MSG_START_ROW+1; i<MSG_END_ROW; i++) put_line(' ', i);
+    pos->row = MSG_START_ROW+1;
     pos->col = 0;
     pos->buf_idx = 0;
   }
