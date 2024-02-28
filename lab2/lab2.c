@@ -52,7 +52,7 @@ struct position text_pos = {
  * cursor for message box.
  */
 struct position msg_pos = {
-  .row = MSG_START_ROW,
+  .row = MSG_START_ROW+1,
   .col = 0,
   .buf_idx = 0,
 };
@@ -161,7 +161,7 @@ int main()
         old = false;
       }
       if (key_idx == -1) key = '\0';
-      else key = keycode_to_char(packet.keycode[0], packet.modifiers);
+      else key = keycode_to_char(packet.keycode[key_idx], packet.modifiers);
 
       if (!key) goto out;
 
