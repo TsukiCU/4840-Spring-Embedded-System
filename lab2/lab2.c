@@ -253,7 +253,7 @@ void async_send_message(char *msg)
 void *network_thread_s(void *msg)
 {
   char *p = msg;
-  if(write(sockfd,p,strlen(p)+1)){
+  if(!write(sockfd,p,strlen(p)+1)){
 	char *err = strerror(errno);
     perror(err);
 	// change error printing here
