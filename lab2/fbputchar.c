@@ -189,7 +189,6 @@ void fb_copy_line(int srcStartLine, int dstStartLine, int lineCount)
 char *alloc_new_text_page()
 {
   char *mem =  malloc(TXT_BOX_LINES*MAX_COLS*sizeof(unsigned char));
-  printf("%p\n",mem);
   return mem;
 }
 

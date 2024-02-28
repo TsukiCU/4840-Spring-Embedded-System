@@ -69,6 +69,7 @@ void *network_thread_f(void *);
 void *network_thread_s(void *);
 void handle_keyboard_input(struct usb_keyboard_packet *packet);
 void print_char(char key, struct position *pos, char *msg_buf);
+void debug_save_previous_page(char *page, int lineLen, int lines);
 pthread_mutex_t lock;   // lock for keyboard.
 
 
@@ -210,6 +211,7 @@ void *network_thread_f(void *ignored)
           p,
           (MSG_START_ROW-text_pos.row)*MAX_COLS
         );
+		debug_save_previous_page(text_box_his.pages[text_box_his.count-1], MAX_COLS, TXT_BOX_LINES);
         // Allocate new page
         text_box_his.pages[text_box_his.count] = alloc_new_text_page();
         ++text_box_his.count;
@@ -328,3 +330,16 @@ void print_char(char key, struct position *pos, char *msg_buf)
   }
 }
 
+void debug_save_previous_page(char *page, int lineLen, int lines)
+{
+	FILE *fp = fopen("test.txt","a");
+	char *buf = malloc(lineLen+1);
+	fprintf(fp, "PAGE\n");
+	for(int i=0;i<lines;++i){
+		memcpy(buf, page+lineLen*i, lineLen);
+		buf[lineLen]=0;
+		fprintf(fp, "%s\n",buf);
+	}
+	fprintf(fp,"\n");
+	fclose(fp);
+}
