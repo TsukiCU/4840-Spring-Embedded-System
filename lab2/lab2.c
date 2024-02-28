@@ -166,6 +166,7 @@ int main()
       if (!key) goto out;
 
       if (key == '\t') {  // if it's a tab
+      printf("here's tab!\n");
         for (int i=0; i<TAB_SPACE; i++) print_char(' ', &msg_pos, &msgbuffer);
       }
 
@@ -276,6 +277,7 @@ void print_char(char key, struct position *pos, char *msg_buf)
 {
   // if it's backspace
   if (key == '\b') {
+  printf("here's backspace!\n");
     fbputchar(' ', pos->row, pos->col-1);
     pos->col--;
     msg_buf[pos->buf_idx--] = ' ';
