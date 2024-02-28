@@ -261,7 +261,7 @@ void *network_thread_s(void *msg)
   }
   else
     printf("Message sent: %s\n",p);
-
+  memset(msgbuffer,0,BUFFER_SIZE+1);
   return NULL;
 }
 
