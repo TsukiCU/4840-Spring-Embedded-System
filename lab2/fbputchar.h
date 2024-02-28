@@ -38,20 +38,33 @@ struct special_keys
     bool delete_;
 };
 
+struct RGB888
+{
+	uint8_t R;
+	uint8_t G;
+	uint8_t B;
+};
+
 struct msg_history
 {
     char *pages[256];
     int count;
+	int curr;
+	int line;
 };
 
 extern int fbopen(void);
 extern void fbputchar(char, int, int);
+extern void fbputcharColor(char, int, int, struct RGB888);
 extern void fbputs(const char *, int, int);
+extern void fbputsColor(const char *, int, int, struct RGB888);
 extern void put_line(char, int);
 extern void clear_screen();
 extern void clear_txt_box();
 extern void horizontal_line();
-extern void fbputs_wrap(const char *, struct position *);
-extern char *alloc_new_text_page();
+extern void fbputs_wrap(const char *, struct position *, int);
+extern char *alloc_new_text_page(struct msg_history *);
+void destroy_pages(struct msg_history *);
+extern void draw_cursor(struct position *, struct RGB888);
 
 #endif

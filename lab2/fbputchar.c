@@ -84,11 +84,7 @@ int fbopen()
   return 0;
 }
 
-/*
- * Draw the given character at the given row/column.
- * fbopen() must be called first.
- */
-void fbputchar(char c, int row, int col)
+void fbputcharColor(char c, int row, int col, struct RGB888 color)
 {
   int x, y;
   unsigned char pixels, *pixelp = font + FONT_HEIGHT * c;
@@ -102,9 +98,9 @@ void fbputchar(char c, int row, int col)
     mask = 0x80;
     for (x = 0 ; x < FONT_WIDTH ; x++) {
       if (pixels & mask) {
-	pixel[0] = 255; /* Red */
-        pixel[1] = 255; /* Green */
-        pixel[2] = 255; /* Blue */
+		pixel[0] = color.R; /* Red */
+        pixel[1] = color.G; /* Green */
+        pixel[2] = color.B; /* Blue */
         pixel[3] = 0;
       } else {
 	pixel[0] = 0;
@@ -114,9 +110,9 @@ void fbputchar(char c, int row, int col)
       }
       pixel += 4;
       if (pixels & mask) {
-	pixel[0] = 255; /* Red */
-        pixel[1] = 255; /* Green */
-        pixel[2] = 255; /* Blue */
+		pixel[0] = color.R; /* Red */
+        pixel[1] = color.G; /* Green */
+        pixel[2] = color.B; /* Blue */
         pixel[3] = 0;
       } else {
 	pixel[0] = 0;
@@ -132,6 +128,22 @@ void fbputchar(char c, int row, int col)
 }
 
 /*
+ * Draw the given character at the given row/column.
+ * fbopen() must be called first.
+ */
+void fbputchar(char c, int row, int col)
+{
+	struct RGB888 color = {255,255,255};
+	fbputcharColor(c, row, col, color);
+}
+
+void fbputsColor(const char *s, int row, int col, struct RGB888 color)
+{
+	char c;
+  	while ((c = *s++) != 0) fbputcharColor(c, row, col++, color);
+}
+
+/*
  * Draw the given string at the given row/column.
  * String must fit on a single line: wrap-around is not handled.
  */
@@ -143,20 +155,40 @@ void fbputs(const char *s, int row, int col)
 
 /*
  * Same basic function as fbputs but can handle wrap around.
+ * Will change pos
  */
-void fbputs_wrap(const char *s, struct position *pos)
+void fbputs_wrap(const char *s, struct position *pos, int message_type)
 {
   char c;
   int row = pos->row, col = pos->col;
+  struct RGB888 color = {0,0,0};
+
+  switch (message_type) {
+  default: // Others' message, White, RGB=255
+	color.B=255;
+  case 2: // Server Message, Yellow, R&G=255
+	color.R=255;
+  case 1: // My message, Green
+	color.G=255;
+	break;
+  }
+
   while ((c = *s++)!=0){
+	if(c=='\n'){
+      col=0;
+      ++row;
+	  continue;
+    }
+
+	fbputcharColor(c, row, col, color);
+	++col;
     if(col>=64){
       col=0;
       ++row;
     }
-    else
-      ++col;
-    fbputchar(c, row, col);
   }
+  pos->row = row;
+  pos->col = col;
 }
 
 /*
@@ -186,11 +218,48 @@ void fb_copy_line(int srcStartLine, int dstStartLine, int lineCount)
   }
 }
 
-char *alloc_new_text_page()
+char *alloc_new_text_page(struct msg_history *his)
 {
-  char *mem =  malloc(TXT_BOX_LINES*MAX_COLS*sizeof(unsigned char));
+  char *mem;
+  if(his->count<256){
+	mem =  malloc(TXT_BOX_LINES*MAX_COLS*sizeof(unsigned char));
+	memset(mem, 0, TXT_BOX_LINES*MAX_COLS);
+	his->pages[his->count]=mem;
+	++his->count;
+	return mem;
+  }
+  mem = his->pages[0];
+  for(int i=0;i<255;++i)
+	his->pages[i]=his->pages[i+1];
+  his->pages[255]=mem;
   memset(mem, 0, TXT_BOX_LINES*MAX_COLS);
+  --his->curr;
   return mem;
+}
+
+void destroy_pages(struct msg_history *his)
+{
+	for(int i=0;i<his->count;++i)
+		free(his->pages[i]);
+}
+
+void draw_cursor(struct position *pos, struct RGB888 color)
+{
+	unsigned char *right = framebuffer +
+    (pos->row * FONT_HEIGHT * 2 + fb_vinfo.yoffset) * fb_finfo.line_length +
+    (pos->col * FONT_WIDTH * 2 + fb_vinfo.xoffset) * BITS_PER_PIXEL / 8;
+
+	for (int y = 0 ; y < FONT_HEIGHT * 2 ; y++, right += fb_finfo.line_length) {
+		unsigned char *pixel = right;
+		pixel[0] = color.R; /* Red */
+        pixel[1] = color.G; /* Green */
+        pixel[2] = color.B; /* Blue */
+        pixel[3] = 0;
+		// pixel[4] = color.R; /* Red */
+        // pixel[5] = color.G; /* Green */
+        // pixel[6] = color.B; /* Blue */
+        // pixel[7] = 0;
+	}
 }
 
 /* 8 X 16 console font from /lib/kbd/consolefonts/lat0-16.psfu.gz
