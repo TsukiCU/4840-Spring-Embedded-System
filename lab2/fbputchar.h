@@ -70,6 +70,6 @@ void destroy_pages(struct msg_history *);
 extern void draw_cursor(struct position *, struct RGB888);
 extern void print_page_info(struct msg_history *);
 extern void handle_back_space(char, char, struct position*);
-extern bool nothing_pushed(struct usb_keyboard_packet* packet);
+void *bs_continuous(void *arg);
 
 #endif

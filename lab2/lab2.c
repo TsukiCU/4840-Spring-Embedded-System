@@ -30,7 +30,7 @@
 volatile int backspace_pressed = 0;
 typedef struct {
 	char keycode;
-	char modifers;
+	char modifiers;
 	struct position** new_pos;
 } bs_param;
 
@@ -84,6 +84,8 @@ void cursor_left(struct position *pos);
 void cursor_right(struct position *pos);
 void async_send_message(char *msg);
 int message_type(char *message);
+void *bs_continuous(void *arg);
+bool nothing_pushed(struct usb_keyboard_packet* packet);
 
 int main()
 {
@@ -166,7 +168,7 @@ int main()
 	 * only way to stop bs_continuous thread is to release bs.
 	 */
 	 if (nothing_pushed(&packet)) backspace_pressed = false;
-	  else if (backspace_pressed) continue;
+	 else if (backspace_pressed) continue;
 	  int ret = handle_keyboard_input(&packet);
       if(ret){
 		if (ret == 0x29) { /* ESC pressed? */
@@ -202,9 +204,6 @@ int main()
 //   memcpy(pressed_keys, packet.keycode, sizeof(packet.keycode));
     }
   }
-
-  /* Terminate the network thread */
-  pthread_cancel(network_thread);
 
   /* Wait for the network thread to finish */
   pthread_join(network_thread, NULL);
@@ -349,7 +348,7 @@ int handle_key_press(char keycode, char modifiers)
 	return 0;
 }
 
-void handle_back_space(char keycode, char modifiers, struct position *new_pos);
+void handle_back_space(char keycode, char modifiers, struct position *new_pos)
 {
 	if(!new_pos->buf_idx)
 		return;
@@ -511,6 +510,7 @@ int message_type(char *message)
 
 void *bs_continuous(void *arg)
 {
+	printf("thread begin\n");
 	bs_param *args = (bs_param *)arg;
 
 	while (backspace_pressed) {
