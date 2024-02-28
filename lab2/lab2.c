@@ -1,6 +1,6 @@
 /*
  *
- * CSEE 4840 Lab 2 for 2019
+ * CSEE 4840 Lab 2 for 2024
  *
  * Hongyu Sun hs3475
  * Yunzhou Li yl5407
@@ -66,10 +66,14 @@ struct msg_history text_box_his = {
 
 struct libusb_device_handle *keyboard;
 uint8_t endpoint_address;
+uint8_t hold_key;
 
 pthread_t network_thread;
+pthread_t network_thread_send;
+pthread_t keyhold_thread;
 void *network_thread_f(void *);
 void *network_thread_s(void *);
+void *keyhold_thread_f(void *);
 int handle_keyboard_input(struct usb_keyboard_packet *packet);
 void print_char(char key, struct position *pos, char *msg_buf);
 void debug_save_previous_page(char *page, int lineLen, int lines);
@@ -92,6 +96,8 @@ int main()
 
   memset(myAddr, 0, BUFFER_SIZE);
   memset(msgbuffer, 0, BUFFER_SIZE+1);
+  keyhold_thread = 0;
+  hold_key = 0;
 
   if ((err = fbopen()) != 0) {
     fprintf(stderr, "Error: Could not open framebuffer: %d\n", err);
@@ -312,6 +318,34 @@ int handle_key_press(char keycode, char modifiers)
 	return 0;
 }
 
+void *keyhold_thread_f(void *args)
+{
+	usleep(500*1000);
+
+	while(1){
+        handle_key_press(args[0],args[1]);
+        usleep(100*1000);
+    }
+    return NULL;
+}
+
+void release_key_hold()
+{
+	if(keyhold_thread)
+		pthread_cancel(keyhold_thread);
+    keyhold_thread = 0;
+    hold_key = 0;
+}
+
+void handle_key_hold(char keycode, char modifiers)
+{
+    char args[2] = {keycode,modifiers};
+
+	release_key_hold();
+    hold_key = keycode;
+    pthread_create(&keyhold_thread, NULL, keyhold_thread_f, (void *)args);
+}
+
 void handle_back_space(char keycode, char modifiers, struct position *new_pos)
 {
 	if(!new_pos->buf_idx)
@@ -348,6 +382,9 @@ void handle_back_space(char keycode, char modifiers, struct position *new_pos)
 int handle_key_release(char keycode, char modifiers)
 {
 	printf("%02x released, modifier %02x\n",keycode,modifiers);
+    if(hold_key==keycode){
+		release_key_hold();
+	}
 	return 0;
 }
 
@@ -364,6 +401,12 @@ int handle_keyboard_input(struct usb_keyboard_packet *packet)
 	};
 	int r=0;
 	int i;
+
+    if(packet->modifiers!=prev_state.modifiers){
+		if(keyhold_thread)
+			pthread_cancel(keyhold_thread);
+		keyhold_thread = 0;
+    }
 
 	printf("code:");
 	for(int i=0;i<6;++i)
@@ -547,7 +590,7 @@ void async_send_message(char *msg)
     return;
 
   /* Start the network thread for sending */
-  pthread_create(&network_thread, NULL, network_thread_s, (void *)msg);
+  pthread_create(&network_thread_send, NULL, network_thread_s, (void *)msg);
 }
 
 /*
