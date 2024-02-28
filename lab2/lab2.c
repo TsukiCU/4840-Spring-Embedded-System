@@ -200,6 +200,11 @@ int main()
   return 0;
 }
 
+
+/*
+ * Reload text box
+ * This function doesn't reload message box
+ */
 void reload_txt_box()
 {
 	char *start=text_box_his.pages[text_box_his.curr];
@@ -238,11 +243,11 @@ void page_right()
 	}
 }
 
-void remove_char(int idx)
-{
-	
-}
-
+/*
+ * Key press event handler
+ * @param keycode - keycode of the pressed key (NOT ASCII)
+ * @param modifiers - modifier status when pressed
+ */
 int handle_key_press(char keycode, char modifiers)
 {
 	printf("%02x pressed, modifier %02x\n",keycode,modifiers);
@@ -308,41 +313,61 @@ int handle_key_press(char keycode, char modifiers)
 	return 0;
 }
 
+
+/*
+ * Key release event handler
+ * @param keycode - keycode of the released key (NOT ASCII)
+ * @param modifiers - modifier status when released
+ */
 int handle_key_release(char keycode, char modifiers)
 {
 	printf("%02x released, modifier %02x\n",keycode,modifiers);
 	return 0;
 }
 
+/*
+ * Keyboard interrupt handler
+ * We assume that there is only 1 key change at a time.
+ */
 int handle_keyboard_input(struct usb_keyboard_packet *packet)
 {
+	// Record last state
 	static struct usb_keyboard_packet prev_state = {
 		.modifiers = 0,
 		.keycode = {0}
 	};
 	int r=0;
-	// Check Modifiers
-	/*if(prev_state.modifiers!=packet->modifiers){
-		if((~prev_state.modifiers) & packet->modifiers)
-			handle_key_press(char keycode)
-	}*/
 	int i;
+	
+	// Compare last state with current state
 	for(i=0;i<6;++i){
+		// Last state reaches end first,
+		// which means a new key is pressed
 		if(prev_state.keycode[i]==0)
 			break;
-		// Key release
+		// Key array is ordered by their pressing order.
+		// So the button pressed earlier will always stay
+		// at the front of the array, and the array will
+		// remain in the same order.
+		// So if 2 arrays mismatch, that means a key is
+		// released.
 		if(prev_state.keycode[i]!=packet->keycode[i]){
 			r = handle_key_release(prev_state.keycode[i],packet->modifiers);
 			prev_state = *packet;
 			return r;
 		}
 	}
+	// If both 2 arrays reach the end
+	// and there is no mismatch,
+	// that means only modifier changes,
+	// just ignore.
 	if(i>=6)
 		goto ret;
 	// Key press
 	if(packet->keycode[i]!=0)
 		r = handle_key_press(packet->keycode[i],packet->modifiers);
 ret:
+	// Save last status.
 	prev_state = *packet;
 	return r;
 }
@@ -512,6 +537,13 @@ void *network_thread_s(void *msg)
   return NULL;
 }
 
+/*
+ * Remove cursor at current position (msg_pos)，
+ * then update msg_pos using new value，
+ * then draw the new cursor.
+ * DO NOT USE OTHER METHOD to UPDATE msg_pos,
+ * otherwise THE OLD CURSOR MAY NOT BE REMOVED.
+ */
 void update_cursor(struct position *new_pos)
 {
 	struct RGB888 black = {0,0,0},
@@ -521,6 +553,12 @@ void update_cursor(struct position *new_pos)
 	draw_cursor(&msg_pos, white);
 }
 
+/* 
+ * Cursor moves left
+ * Will change row,col,buf_idx
+ * Will rollback to last row
+ * Will stop at first element
+ */
 void cursor_left(struct position *pos)
 {
     // if it's the first row, first col
@@ -537,6 +575,12 @@ void cursor_left(struct position *pos)
 	return;
 }
 
+/* 
+ * Cursor moves right
+ * Will change row,col,buf_idx
+ * Will rolldown to next row
+ * Will stop at last element or BUFFER_SIZE
+ */
 void cursor_right(struct position *pos)
 {
 	// End of the message
@@ -566,7 +610,8 @@ void print_char(char key, struct position *pos, char *msg_buf)
 // 	msg_buf[pos->buf_idx--] = ' ';
 // 	return;
 //   }
-// if reach the end of the msg area then need a refresh.
+
+  // if reach the end of the msg area then need a refresh.
   if (pos->row == MSG_END_ROW-1 && pos->col == MAX_COLS-1) {
 	// Set last value first
 	msg_buf[pos->buf_idx] = key;
@@ -582,8 +627,13 @@ void print_char(char key, struct position *pos, char *msg_buf)
 	pos->col = MAX_COLS - 1;
 	pos->buf_idx = MAX_COLS - 1;
   }
+  // TODO: when cursor is in the middle, insert values
+
+  // Set value to buffer
   msg_buf[pos->buf_idx] = key;
+  // Display
   fbputchar(key, pos->row, pos->col);
+  // Cursor moves right
   cursor_right(pos);
   
 // // just need to reset column.
