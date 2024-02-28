@@ -155,10 +155,9 @@ int main()
       int key_idx = -1;  // if none, just '\0' will do.
       bool old = false;  // if it's still the keycode that's already taken care of
       for(int i=0; i<3; i++) {
-        int j;
-        for(j=0; j<3;j++) // if it's in pressed keys list then it's old.
+        for(int j=0; j<3;j++) // if it's in pressed keys list then it's old.
           if (packet.keycode[i] == pressed_keys[j]) old = true;
-        if (!old && packet.keycode[j]!='\0') key_idx = j;
+        if (!old && packet.keycode[i]!='\0') key_idx = i;
         old = false;
       }
       if (key_idx == -1) key = '\0';
