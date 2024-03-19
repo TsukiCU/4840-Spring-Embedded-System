@@ -10,7 +10,7 @@ module vga_ball(input logic        clk,
 		input logic [7:0]  writedata,
 		input logic 	   write,
 		input 		   chipselect,
-		input logic [2:0]  address,
+		input logic [3:0]  address,
 
 		output logic [7:0] VGA_R, VGA_G, VGA_B,
 		output logic 	   VGA_CLK, VGA_HS, VGA_VS,
@@ -20,20 +20,24 @@ module vga_ball(input logic        clk,
    logic [10:0]	   hcount;
    logic [9:0]     vcount;
 
-   logic [7:0] 	   background_r, background_g, background_b;
+   logic [7:0] 	   background_r, background_g, background_b, pos_x, pos_y;
 	
    vga_counters counters(.clk50(clk), .*);
 
    always_ff @(posedge clk)
      if (reset) begin
-	background_r <= 8'h0;
-	background_g <= 8'h0;
-	background_b <= 8'h80;
+	background_r <= 8'h40;
+	background_g <= 8'h40;
+	background_b <= 8'h40;
+  pos_x        <= 8'h4;
+  pos_y        <= 8'h4;
      end else if (chipselect && write)
        case (address)
 	 3'h0 : background_r <= writedata;
 	 3'h1 : background_g <= writedata;
 	 3'h2 : background_b <= writedata;
+   3'h3 : pos_x        <= writedata;
+   3'h4 : pos_y        <= writedata;
        endcase
 
    always_comb begin
