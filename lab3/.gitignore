@@ -1,3 +1,4 @@
 *.o
 test/
 linux-headers-4.19.0.*
+*.ko
