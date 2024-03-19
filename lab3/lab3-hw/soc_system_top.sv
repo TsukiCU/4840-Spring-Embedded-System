@@ -266,7 +266,15 @@ module soc_system_top(
      .hps_hps_io_gpio_inst_GPIO48  ( HPS_I2C_CONTROL ),
      .hps_hps_io_gpio_inst_GPIO53  ( HPS_LED ),
      .hps_hps_io_gpio_inst_GPIO54  ( HPS_KEY ),
-     .hps_hps_io_gpio_inst_GPIO61  ( HPS_GSENSOR_INT )
+     .hps_hps_io_gpio_inst_GPIO61  ( HPS_GSENSOR_INT ),
+.vga_r (VGA_R),
+.vga_g (VGA_G),
+.vga_b (VGA_B),
+.vga_clk (VGA_CLK),
+.vga_hs (VGA_HS),
+.vga_vs (VGA_VS),
+.vga_blank_n (VGA_BLANK_N),
+.vga_sync_n (VGA_SYNC_N)
   );
 
    // The following quiet the "no driver" warnings for output
@@ -314,9 +322,9 @@ module soc_system_top(
 
    assign TD_RESET_N = SW[0];
 
-   assign {VGA_R, VGA_G, VGA_B} = { 24{ SW[0] } };
-   assign {VGA_BLANK_N, VGA_CLK,
-	   VGA_HS, VGA_SYNC_N, VGA_VS} = { 5{ SW[0] } };
+   //assign {VGA_R, VGA_G, VGA_B} = { 24{ SW[0] } };
+   //assign {VGA_BLANK_N, VGA_CLK,
+   //	   VGA_HS, VGA_SYNC_N, VGA_VS} = { 5{ SW[0] } };
 
 							          
 endmodule

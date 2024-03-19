@@ -2,3 +2,15 @@
 test/
 linux-headers-4.19.0.*
 *.ko
+db/
+*.txt
+incremental_db/
+output_files/
+*.qpf
+*.qsf
+*.sdc
+*.sopcinfo
+soc_system/
+*.tcl~
+.qsys_edit/
+hps_isw_handoff/
