@@ -25,9 +25,13 @@ module vga_ball(input logic        clk,
    logic [15:0]    circle_x,circle_y;
    logic [7:0]     circle_r;
    logic [19:0]    dis2, r2;
+   logic [9:0]     dis_x,dis_y;
 
-   assign dis2 = (hcount[10:1] - circle_x[9:0])*(hcount[10:1] - circle_x[9:0]) + (vcount[9:0] - circle_y[9:0])*(vcount[9:0] - circle_y[9:0]);
-   assign r2 = {4'b0,circle_r*circle_r};
+   assign dis_x = (hcount[10:1] > circle_x[9:0]) ? (hcount[10:1] - circle_x[9:0]): (circle_x[9:0] - hcount[10:1]);
+   assign dis_y = (hcount[9:0] > circle_y[9:0]) ? (hcount[9:0] - circle_y[9:0]): (circle_y[9:0] - vcount[9:0]);
+   assign dis2 = $unsigned(dis_x)*$unsigned(dis_x) + 
+                 $unsigned(dis_y)*$unsigned(dis_y);
+   assign r2 = {4'b0,$unsigned(circle_r)*$unsigned(circle_r)};
 	
    vga_counters counters(.clk50(clk), .*);
 
@@ -40,8 +44,8 @@ module vga_ball(input logic        clk,
   //rect_top <= 8'b11000000;
   //rect_right <= 8'b11111111;
   //rect_bottom <= 8'b11111111;
-    circle_x <= 16'h0;
-    circle_y <= 16'h0;
+    circle_x <= 16'h00001100;
+    circle_y <= 16'h00001100;
     circle_r <= 8'h0;
      end else if (chipselect && write)
        case (address)
@@ -62,7 +66,7 @@ module vga_ball(input logic        clk,
    always_comb begin
       {VGA_R, VGA_G, VGA_B} = {8'h0, 8'h0, 8'h0};
       if (VGA_BLANK_n )
-	if (dis2<=r2)
+	if (dis2<r2)
 	  {VGA_R, VGA_G, VGA_B} = {background_r, background_g, background_b};
 	else
 	  {VGA_R, VGA_G, VGA_B} =

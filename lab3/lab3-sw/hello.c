@@ -69,7 +69,7 @@ int main()
   };
 
   //vga_ball_rect_t rect = {0x00,0x00,0x20,0x20};
-  vga_ball_circle_t circle = {0x0100,0x0100,0x20};
+  vga_ball_circle_t circle = {0x0100,0x0100,0x0f};
 # define COLORS 9
 
   printf("VGA ball Userspace program started\n");
