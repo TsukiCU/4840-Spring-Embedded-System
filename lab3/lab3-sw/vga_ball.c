@@ -46,19 +46,38 @@
 struct vga_ball_dev {
 	struct resource res; /* Resource: our registers */
 	void __iomem *virtbase; /* Where registers can be accessed in memory */
-        vga_ball_color_t background;
+        vga_ball_color_t color;
+		//vga_ball_rect_t rect;
+		vga_ball_circle_t circle;
 } dev;
 
 /*
  * Write segments of a single digit
  * Assumes digit is in range and the device information has been set up
  */
-static void write_background(vga_ball_color_t *background)
+static void write_color(vga_ball_color_t *color)
 {
-	iowrite8(background->red, BG_RED(dev.virtbase) );
-	iowrite8(background->green, BG_GREEN(dev.virtbase) );
-	iowrite8(background->blue, BG_BLUE(dev.virtbase) );
-	dev.background = *background;
+	iowrite8(color->red, BG_RED(dev.virtbase) );
+	iowrite8(color->green, BG_GREEN(dev.virtbase) );
+	iowrite8(color->blue, BG_BLUE(dev.virtbase) );
+	dev.color = *color;
+}
+
+// static void write_rect(vga_ball_rect_t *rect)
+// {
+// 	iowrite8(rect->left, dev.virtbase + 3 );
+// 	iowrite8(rect->top, dev.virtbase + 4 );
+// 	iowrite8(rect->right, dev.virtbase + 5 );
+// 	iowrite8(rect->bottom, dev.virtbase + 6 );
+// 	dev.rect = *rect;
+// }
+
+static void write_circle(vga_ball_circle_t *circle)
+{
+	iowrite16(circle->x, dev.virtbase + 3 );
+	iowrite16(circle->y, dev.virtbase + 5 );
+	iowrite8(circle->radius, dev.virtbase + 7 );
+	dev.circle = *circle;
 }
 
 /*
@@ -75,11 +94,13 @@ static long vga_ball_ioctl(struct file *f, unsigned int cmd, unsigned long arg)
 		if (copy_from_user(&vla, (vga_ball_arg_t *) arg,
 				   sizeof(vga_ball_arg_t)))
 			return -EACCES;
-		write_background(&vla.background);
+		write_color(&vla.color);
+		write_circle(&vla.circle);
 		break;
 
 	case VGA_BALL_READ_BACKGROUND:
-	  	vla.background = dev.background;
+	  	vla.color = dev.color;
+		vla.circle = dev.circle;
 		if (copy_to_user((vga_ball_arg_t *) arg, &vla,
 				 sizeof(vga_ball_arg_t)))
 			return -EACCES;
@@ -139,7 +160,7 @@ static int __init vga_ball_probe(struct platform_device *pdev)
 	}
         
 	/* Set an initial color */
-        write_background(&beige);
+        write_color(&beige);
 
 	return 0;
 

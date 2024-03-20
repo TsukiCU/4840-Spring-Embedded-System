@@ -2,14 +2,24 @@
 #define _VGA_BALL_H
 
 #include <linux/ioctl.h>
+#include <stddef.h>
 
 typedef struct {
 	unsigned char red, green, blue;
 } vga_ball_color_t;
-  
 
 typedef struct {
-  vga_ball_color_t background;
+  unsigned char left,top,right,bottom;
+} vga_ball_rect_t;
+
+typedef struct {
+  unsigned short x,y;
+  unsigned char radius;
+} vga_ball_circle_t;
+
+typedef struct {
+  vga_ball_color_t color;
+  vga_ball_circle_t circle;
 } vga_ball_arg_t;
 
 #define VGA_BALL_MAGIC 'q'

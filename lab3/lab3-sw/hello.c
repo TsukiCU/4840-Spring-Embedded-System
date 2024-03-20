@@ -25,18 +25,28 @@ void print_background_color() {
       perror("ioctl(VGA_BALL_READ_BACKGROUND) failed");
       return;
   }
-  printf("%02x %02x %02x\n",
-	 vla.background.red, vla.background.green, vla.background.blue);
+  printf("%02x %02x %02x %04x %04x %d\n",
+	 vla.color.red, vla.color.green, vla.color.blue,
+   vla.circle.x,vla.circle.y,vla.circle.radius);
+   //vla.rect.left,vla.rect.top,vla.rect.right,vla.rect.bottom);
 }
 
 /* Set the background color */
 void set_background_color(const vga_ball_color_t *c)
 {
   vga_ball_arg_t vla;
-  vla.background = *c;
+  vla.color = *c;
   if (ioctl(vga_ball_fd, VGA_BALL_WRITE_BACKGROUND, &vla)) {
       perror("ioctl(VGA_BALL_SET_BACKGROUND) failed");
       return;
+  }
+}
+
+void set_display(const vga_ball_arg_t *arg)
+{
+  if (ioctl(vga_ball_fd, VGA_BALL_WRITE_BACKGROUND, arg)) {
+    perror("ioctl(VGA_BALL_SET_BACKGROUND) failed");
+    return;
   }
 }
 
@@ -58,6 +68,8 @@ int main()
     { 0xff, 0xff, 0xff }  /* White */
   };
 
+  //vga_ball_rect_t rect = {0x00,0x00,0x20,0x20};
+  vga_ball_circle_t circle = {0x0100,0x0100,0x20};
 # define COLORS 9
 
   printf("VGA ball Userspace program started\n");
@@ -71,7 +83,18 @@ int main()
   print_background_color();
 
   for (i = 0 ; i < 24 ; i++) {
-    set_background_color(&colors[i % COLORS ]);
+    vga_ball_arg_t vla;
+    vla.color = colors[i % COLORS ];
+    // vla.rect = rect;
+    // rect.left += 0x10;
+    // rect.top += 0x10;
+    // rect.right += 0x10;
+    // rect.bottom += 0x10;
+    vla.circle = circle;
+    circle.x += 0x0050;
+    circle.y += 0x0050;
+    //set_background_color(&colors[i % COLORS ]);
+    set_display(&vla);
     print_background_color();
     usleep(400000);
   }

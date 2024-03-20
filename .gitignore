@@ -1,3 +1,16 @@
 *.o
 *.exe
 test/
+lab3/lab3-hw/soc_system.dtb
+lab3/lab3-hw/soc_system.dts
+lab3/lab3-hw/vga_ball_hw.tcl
+lab3/lab3-hw/vga_ball.sv
+lab3/lab3-sw/.vga_ball.ko.cmd
+lab3/lab3-sw/.vga_ball.mod.o.cmd
+lab3/lab3-sw/.vga_ball.o.cmd
+lab3/lab3-sw/hello
+lab3/lab3-sw/Module.symvers
+lab3/lab3-sw/modules.order
+lab3/lab3-sw/.tmp_versions/vga_ball.mod
+lab3/lab3-sw/vga_ball.mod.c
+lab3/lab3-hw/vga_ball_hw.tcl

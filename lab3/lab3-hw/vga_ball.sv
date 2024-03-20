@@ -20,35 +20,53 @@ module vga_ball(input logic        clk,
    logic [10:0]	   hcount;
    logic [9:0]     vcount;
 
-   logic [7:0] 	   background_r, background_g, background_b, pos_x, pos_y;
+   logic [7:0] 	   background_r, background_g, background_b;
+   //logic [7:0]     rect_left,rect_top,rect_right,rect_bottom;
+   logic [15:0]    circle_x,circle_y;
+   logic [7:0]     circle_r;
+   logic [19:0]    dis2, r2;
+
+   assign dis2 = (hcount[10:1] - circle_x[9:0])*(hcount[10:1] - circle_x[9:0]) + (vcount[9:0] - circle_y[9:0])*(vcount[9:0] - circle_y[9:0]);
+   assign r2 = {4'b0,circle_r*circle_r};
 	
    vga_counters counters(.clk50(clk), .*);
 
    always_ff @(posedge clk)
      if (reset) begin
-	background_r <= 8'h40;
-	background_g <= 8'h40;
-	background_b <= 8'h40;
-  pos_x        <= 8'h4;
-  pos_y        <= 8'h4;
+	background_r <= 8'h0;
+	background_g <= 8'h0;
+	background_b <= 8'h80;
+  //rect_left <= 8'b11000000;
+  //rect_top <= 8'b11000000;
+  //rect_right <= 8'b11111111;
+  //rect_bottom <= 8'b11111111;
+    circle_x <= 16'h0;
+    circle_y <= 16'h0;
+    circle_r <= 8'h0;
      end else if (chipselect && write)
        case (address)
 	 3'h0 : background_r <= writedata;
 	 3'h1 : background_g <= writedata;
 	 3'h2 : background_b <= writedata;
-   3'h3 : pos_x        <= writedata;
-   3'h4 : pos_y        <= writedata;
+   //3'h3 : rect_left <= writedata;
+   //3'h4 : rect_top <= writedata;
+   //3'h5 : rect_right <= writedata;
+   //3'h6 : rect_bottom <= writedata;
+     3'h3 : circle_x[15:8] <= writedata;
+     3'h4 : circle_x[7:0] <= writedata;
+     3'h5 : circle_y[15:8] <= writedata;
+     3'h6 : circle_y[7:0] <= writedata;
+     3'h7 : circle_r <= writedata;
        endcase
 
    always_comb begin
       {VGA_R, VGA_G, VGA_B} = {8'h0, 8'h0, 8'h0};
       if (VGA_BLANK_n )
-	if (hcount[10:6] == 5'd3 &&
-	    vcount[9:5] == 5'd3)
-	  {VGA_R, VGA_G, VGA_B} = {8'hff, 8'hff, 8'hff};
+	if (dis2<=r2)
+	  {VGA_R, VGA_G, VGA_B} = {background_r, background_g, background_b};
 	else
 	  {VGA_R, VGA_G, VGA_B} =
-             {background_r, background_g, background_b};
+             {8'h0,8'h0,8'h80};
    end
 	       
 endmodule
