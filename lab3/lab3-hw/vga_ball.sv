@@ -10,7 +10,7 @@ module vga_ball(input logic        clk,
 		input logic [7:0]  writedata,
 		input logic 	   write,
 		input 		   chipselect,
-		input logic [2:0]  address,
+		input logic [3:0]  address,
 
 		output logic [7:0] VGA_R, VGA_G, VGA_B,
 		output logic 	   VGA_CLK, VGA_HS, VGA_VS,
@@ -21,9 +21,10 @@ module vga_ball(input logic        clk,
    logic [9:0]     vcount;
 
    logic [7:0] 	   background_r, background_g, background_b;
+   logic [7:0]     circle_r, circle_g, circle_b;
    //logic [7:0]     rect_left,rect_top,rect_right,rect_bottom;
    logic [15:0]    circle_x,circle_y;
-   logic [19:0]     circle_r;
+   logic [19:0]     circle_radius;
    logic [19:0]    dis2, r2;
    logic [19:0]     dis_x,dis_y;
 
@@ -31,7 +32,7 @@ module vga_ball(input logic        clk,
    assign dis_y = (vcount[9:0] > circle_y[9:0]) ? (vcount[9:0] - circle_y[9:0]): (circle_y[9:0] - vcount[9:0]);
    assign dis2 = $unsigned(dis_x)*$unsigned(dis_x) + 
                  $unsigned(dis_y)*$unsigned(dis_y);
-   assign r2 = $unsigned(circle_r)*$unsigned(circle_r);
+   assign r2 = $unsigned(circle_radius)*$unsigned(circle_radius);
 	
    vga_counters counters(.clk50(clk), .*);
 
@@ -46,31 +47,30 @@ module vga_ball(input logic        clk,
   //rect_bottom <= 8'b11111111;
     circle_x <= 16'h00000000;
     circle_y <= 16'h00000000;
-    circle_r <= 20'h0;
+    circle_radius <= 20'h0;
      end else if (chipselect && write)
        case (address)
-	 3'h0 : background_r <= writedata;
-	 3'h1 : background_g <= writedata;
-	 3'h2 : background_b <= writedata;
-   //3'h3 : rect_left <= writedata;
-   //3'h4 : rect_top <= writedata;
-   //3'h5 : rect_right <= writedata;
-   //3'h6 : rect_bottom <= writedata;
-     3'h3 : circle_x[15:8] <= writedata;
-     3'h4 : circle_x[7:0] <= writedata;
-     3'h5 : circle_y[15:8] <= writedata;
-     3'h6 : circle_y[7:0] <= writedata;
-     3'h7 : circle_r[7:0] <= writedata;
+        4'h0 : circle_r <= writedata;
+        4'h1 : circle_g <= writedata;
+        4'h2 : circle_b <= writedata;
+        4'h3 : circle_x[15:8] <= writedata;
+        4'h4 : circle_x[7:0] <= writedata;
+        4'h5 : circle_y[15:8] <= writedata;
+        4'h6 : circle_y[7:0] <= writedata;
+        4'h7 : circle_radius[7:0] <= writedata;
+        4'h8 : background_r <= writedata;
+        4'h9 : background_g <= writedata;
+        4'ha : background_b <= writedata;
        endcase
 
    always_comb begin
       {VGA_R, VGA_G, VGA_B} = {8'h0, 8'h0, 8'h0};
       if (VGA_BLANK_n )
 	if (dis2<r2 && circle_x <= 16'd1280 && circle_y <= 16'd640)
-	  {VGA_R, VGA_G, VGA_B} = {background_r, background_g, background_b};
+	  {VGA_R, VGA_G, VGA_B} = {circle_r, circle_g, circle_b};
 	else
 	  {VGA_R, VGA_G, VGA_B} =
-             {8'h0,8'h0,8'h80};
+             {background_r,background_g,background_b};
    end
 	       
 endmodule

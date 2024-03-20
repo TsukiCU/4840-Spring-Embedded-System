@@ -51,7 +51,8 @@ struct arguments{
   vga_ball_circle_t circle;
   vga_ball_dir_t dir;
   vga_ball_color_t c_color;
-  vga_ball_color_t b_color;
+  vga_ball_color_t bg_color;
+  int c_random_color;
 };
 static char args_doc[] = "-x StartX -y StartY -u DirectionX -v DirectionY";
 static char doc[] = "A bouncing ball program.";
@@ -83,6 +84,7 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         argp_failure(state, 1, 0, "invalid R,G,B for -c. See --help for more information");
         exit(ARGP_ERR_UNKNOWN);
       }
+      args->c_random_color = 0;
       args->c_color.red = arr[0];
       args->c_color.green = arr[1];
       args->c_color.blue = arr[2];
@@ -97,10 +99,10 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
         argp_failure(state, 1, 0, "invalid R,G,B for -b. See --help for more information");
         exit(ARGP_ERR_UNKNOWN);
       }
-      args->b_color.red = arr[0];
-      args->b_color.green = arr[1];
-      args->b_color.blue = arr[2];
-      printf("Background %u %u %u\n",args->b_color.red,args->b_color.green,args->b_color.blue);
+      args->bg_color.red = arr[0];
+      args->bg_color.green = arr[1];
+      args->bg_color.blue = arr[2];
+      printf("Background %u %u %u\n",args->bg_color.red,args->bg_color.green,args->bg_color.blue);
       break;
     case ARGP_KEY_END:
       if((2*args->circle.radius+ABS(args->dir.dx)>640)||
@@ -116,8 +118,8 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
 struct argp argp = {options, parse_opt, args_doc, doc};
 vga_ball_dir_t dir;
 
-/* Read and print the background color */
-void print_background_color() {
+/* Read and print the information */
+void print_info() {
   vga_ball_arg_t vla;
   const char *strs[6]={
     "Undefined",
@@ -128,34 +130,23 @@ void print_background_color() {
     "Cornerwise"
   };
 
-  if (ioctl(vga_ball_fd, VGA_BALL_READ_BACKGROUND, &vla)) {
-      perror("ioctl(VGA_BALL_READ_BACKGROUND) failed");
+  if (ioctl(vga_ball_fd, VGA_BALL_READ, &vla)) {
+      perror("ioctl(VGA_BALL_READ) failed");
       return;
   }
   printf("%s %02x %02x %02x %d %d %d %d %d\n",
    strs[dir.next_bound],
-	 vla.color.red, vla.color.green, vla.color.blue,
+	 vla.c_color.red, vla.c_color.green, vla.c_color.blue,
    vla.circle.x,vla.circle.y,
    dir.dx,dir.dy,
    vla.circle.radius);
    //vla.rect.left,vla.rect.top,vla.rect.right,vla.rect.bottom);
 }
 
-/* Set the background color */
-void set_background_color(const vga_ball_color_t *c)
-{
-  vga_ball_arg_t vla;
-  vla.color = *c;
-  if (ioctl(vga_ball_fd, VGA_BALL_WRITE_BACKGROUND, &vla)) {
-      perror("ioctl(VGA_BALL_SET_BACKGROUND) failed");
-      return;
-  }
-}
-
 void set_display(const vga_ball_arg_t *arg)
 {
-  if (ioctl(vga_ball_fd, VGA_BALL_WRITE_BACKGROUND, arg)) {
-    perror("ioctl(VGA_BALL_SET_BACKGROUND) failed");
+  if (ioctl(vga_ball_fd, VGA_BALL_WRITE, arg)) {
+    perror("ioctl(VGA_BALL_WRITE) failed");
     return;
   }
 }
@@ -305,10 +296,16 @@ int main(int argc,char **argv)
   args.circle.radius=16;
   args.dir.dx=0;
   args.dir.dy=0;
+  args.c_random_color = 1;
+  args.bg_color.red=args.bg_color.green=args.bg_color.blue=0xff;
+  args.c_color.red=0xff;
+  args.c_color.green=args.c_color.blue=0;
   argp_parse(&argp,argc,argv,0,0,&args);
   vga_ball_arg_t vla;
-  dir = args.dir;
   vga_ball_circle_t circle = args.circle;
+  dir = args.dir;
+  vla.c_color = args.c_color;
+  vla.bg_color = args.bg_color;
 
   static const char filename[] = "/dev/vga_ball";
 
@@ -321,7 +318,6 @@ int main(int argc,char **argv)
     { 0xff, 0x00, 0xff }, /* Magenta */
     { 0x80, 0x80, 0x80 }, /* Gray */
     { 0x00, 0x00, 0x00 }, /* Black */
-    { 0xff, 0xff, 0xff }  /* White */
   };
 
 # define COLORS 9
@@ -333,20 +329,20 @@ int main(int argc,char **argv)
     return -1;
   }
   reset_circle(&circle,&dir);
-  vla.color = colors[0];
   vla.circle = circle;
   set_display(&vla);
   printf("initial state: ");
-  print_background_color();
+  print_info();
 
   int i=0;
   int dr=5;
   while(1) {
     ++i;
-    vla.color = colors[i % COLORS ];
+    if(args.c_random_color)
+      vla.c_color = colors[i % COLORS ];
     vla.circle = circle;
     set_display(&vla);
-    print_background_color();
+    print_info();
     if(circle.radius>100)
       dr=-5;
     if(circle.radius<10)
