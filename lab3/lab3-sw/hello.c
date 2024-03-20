@@ -29,6 +29,7 @@ struct arguments{
 static char args_doc[] = "-x StartX -y StartY -u DirectionX -v DirectionY";
 static char doc[] = "A bouncing ball program.";
 static struct argp_option options[] = {
+  // TODO: Add color settings?
   {"startx",'x',"STARTX",0,"start x coordinate of circle"},
   {"starty",'y',"STARTY",0,"start y coordinate of circle"},
   {"dx",'u',"DELTAX",0,"start x direction"},
@@ -96,6 +97,7 @@ void update_circle(vga_ball_circle_t *circle, vga_ball_dir_t *dir)
   short remain_x = dir->dx>0?(640.0-circle->radius)-circle->x:circle->radius-circle->x;
   short remain_y = dir->dy>0?(480.0-circle->radius)-circle->y:circle->radius-circle->y;
   //printf("d %d %d remain %d %d\n",dir->dx,dir->dy,remain_x,remain_y);
+  // TODO: FIX dx==0||dy==0 float exception
   if(!(remain_x/dir->dx)||!(remain_y/dir->dy)){
     // x is faster
     if((float)ABS(remain_x/dir->dx)<(float)ABS(remain_y/dir->dy)){
