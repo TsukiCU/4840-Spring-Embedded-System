@@ -13,12 +13,13 @@ typedef struct {
 } vga_ball_rect_t;
 
 typedef struct {
-  unsigned short x,y;
+  short x,y;
   unsigned char radius;
 } vga_ball_circle_t;
 
 typedef struct {
   short dx,dy;
+  short next_bound;
 } vga_ball_dir_t;
 
 typedef struct {

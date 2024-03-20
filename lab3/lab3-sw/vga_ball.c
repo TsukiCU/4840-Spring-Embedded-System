@@ -63,20 +63,11 @@ static void write_color(vga_ball_color_t *color)
 	dev.color = *color;
 }
 
-// static void write_rect(vga_ball_rect_t *rect)
-// {
-// 	iowrite8(rect->left, dev.virtbase + 3 );
-// 	iowrite8(rect->top, dev.virtbase + 4 );
-// 	iowrite8(rect->right, dev.virtbase + 5 );
-// 	iowrite8(rect->bottom, dev.virtbase + 6 );
-// 	dev.rect = *rect;
-// }
-
 static void write_circle(vga_ball_circle_t *circle)
 {
-	iowrite8((unsigned char)(circle->x>>8), dev.virtbase + 3 );
+	iowrite8((unsigned char)((circle->x>>8)&0b11), dev.virtbase + 3 );
 	iowrite8((unsigned char)(circle->x), dev.virtbase + 4 );
-	iowrite8((unsigned char)(circle->y>>8), dev.virtbase + 5 );
+	iowrite8((unsigned char)((circle->y>>8)&0b11), dev.virtbase + 5 );
 	iowrite8((unsigned char)(circle->y), dev.virtbase + 6 );
 	iowrite8(circle->radius, dev.virtbase + 7 );
 	dev.circle = *circle;
