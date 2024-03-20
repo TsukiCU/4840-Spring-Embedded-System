@@ -18,6 +18,10 @@ typedef struct {
 } vga_ball_circle_t;
 
 typedef struct {
+  short dx,dy;
+} vga_ball_dir_t;
+
+typedef struct {
   vga_ball_color_t color;
   vga_ball_circle_t circle;
 } vga_ball_arg_t;
