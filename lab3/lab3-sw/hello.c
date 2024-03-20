@@ -194,6 +194,11 @@ void set_radius(vga_ball_circle_t *circle, vga_ball_dir_t *dir, unsigned char r)
   calc_next_bound(circle,dir);
 }
 
+
+/*
+ * Fast inverse square root function.
+ * https://github.com/RuralAnemone/quake-3-fast-inverse-sqrt/blob/main/src/main-og.c
+ */
 float Q_rsqrt(float number) {
 	long i;
 	float x2, y;
@@ -205,7 +210,6 @@ float Q_rsqrt(float number) {
 	i = 0x5f3759df - (i >> 1);				// what the fuck?
 	y = * (float *) &i;
 	y = y * (threehalfs - (x2 * y * y));	// 1st iteration
-	// y = y * (threehalfs - (x2 * y * y));	// 2nd iteration, this can be removed
 
 	return y;
 }
@@ -237,7 +241,6 @@ void reset_circle(vga_ball_circle_t *circle, vga_ball_dir_t *dir)
   float rlen = Q_rsqrt(dir->vx*dir->vx+dir->vy*dir->vy);
   dir->vx*=rlen*dir->speed;
   dir->vy*=rlen*dir->speed;
-  printf("%f %f\n",dir->vx,dir->vy);
 
   calc_next_bound(circle,dir);
 }
