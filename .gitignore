@@ -14,3 +14,4 @@ lab3/lab3-sw/modules.order
 lab3/lab3-sw/.tmp_versions/vga_ball.mod
 lab3/lab3-sw/vga_ball.mod.c
 lab3/lab3-hw/vga_ball_hw.tcl
+lab3/back/*

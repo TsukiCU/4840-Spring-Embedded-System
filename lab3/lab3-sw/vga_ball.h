@@ -21,6 +21,8 @@ typedef struct {
   short dx,dy;
   short next_bound;
   short corner;
+  float vx,vy,fx,fy;
+  float speed;
 } vga_ball_dir_t;
 
 typedef struct {

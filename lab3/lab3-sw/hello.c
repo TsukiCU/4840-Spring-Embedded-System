@@ -62,6 +62,7 @@ static struct argp_option options[] = {
   {"dx",'u',"DELTAX",0,"start x direction"},
   {"dy",'v',"DELTAY",0,"start y direction"},
   {"radius",'r',"RADIUS",0,"circle radius"},
+  {"speed",'s',"SPEED",0,"circle speed"},
   {"color",'c',"R,G,B",0,"circle color"},
   {"background",'b',"R,G,B",0,"background color"},
   { 0 }
@@ -72,9 +73,16 @@ static error_t parse_opt(int key, char *arg, struct argp_state *state) {
     switch (key) {
     case 'x': args->circle.x = atoi(arg); break;
     case 'y': args->circle.y = atoi(arg); break;
-    case 'u': args->dir.dx = atoi(arg); break;
-    case 'v': args->dir.dy = atoi(arg); break;
+    case 'u': args->dir.vx = atoi(arg); break;
+    case 'v': args->dir.vy = atoi(arg); break;
     case 'r': args->circle.radius = atoi(arg); break;
+    case 's': 
+      args->dir.speed = atof(arg);
+      if(args->dir.speed<=0){
+        argp_failure(state, 1, 0, "invalid argument for -s. See --help for more information");
+        exit(ARGP_ERR_UNKNOWN);
+      }
+      break;
     case 'c':
       if(parse_nums(arg,arr,3)<3){
         argp_failure(state, 1, 0, "invalid argument for -c. See --help for more information");
@@ -154,18 +162,18 @@ void set_display(const vga_ball_arg_t *arg)
 void calc_next_bound(vga_ball_circle_t *circle, vga_ball_dir_t *dir)
 {
   int a,b;
-  a=dir->dx>0?(640-circle->radius-circle->x):(circle->radius-circle->x);//440
-  b=dir->dy>0?(480-circle->radius-circle->y):(circle->radius-circle->y);//60
-  a=ABS(a*dir->dy);//440*200
-  b=ABS(b*dir->dx);//440*
+  a=dir->vx>0?(640-circle->radius-circle->x):(circle->radius-circle->x);
+  b=dir->vy>0?(480-circle->radius-circle->y):(circle->radius-circle->y);
+  a=ABS(a*dir->vy);
+  b=ABS(b*dir->vx);
   if(a>b){// Depends on dy
-    if(dir->dy>0)
+    if(dir->vy>0)
       dir->next_bound = 4;
     else
       dir->next_bound = 3;
   }
   else {
-    if(dir->dx>0)
+    if(dir->vx>0)
       dir->next_bound = 2;
     else
       dir->next_bound = 1;
@@ -184,6 +192,22 @@ void set_radius(vga_ball_circle_t *circle, vga_ball_dir_t *dir, unsigned char r)
   }
   circle->radius=r;
   calc_next_bound(circle,dir);
+}
+
+float Q_rsqrt(float number) {
+	long i;
+	float x2, y;
+	const float threehalfs = 1.5F;
+
+	x2 = number * 0.5;
+	y = number;
+	i = * (long *) &y;						// evil floating point bit hack
+	i = 0x5f3759df - (i >> 1);				// what the fuck?
+	y = * (float *) &i;
+	y = y * (threehalfs - (x2 * y * y));	// 1st iteration
+	// y = y * (threehalfs - (x2 * y * y));	// 2nd iteration, this can be removed
+
+	return y;
 }
 
 void reset_circle(vga_ball_circle_t *circle, vga_ball_dir_t *dir)
@@ -209,24 +233,36 @@ void reset_circle(vga_ball_circle_t *circle, vga_ball_dir_t *dir)
     dir->dy = -ABS(dir->dy);
   }
   dir->next_bound=0;
+
+  float rlen = Q_rsqrt(dir->vx*dir->vx+dir->vy*dir->vy);
+  dir->vx*=rlen*dir->speed;
+  dir->vy*=rlen*dir->speed;
+  printf("%f %f\n",dir->vx,dir->vy);
+
   calc_next_bound(circle,dir);
 }
 
 void update_circle(vga_ball_circle_t *circle, vga_ball_dir_t *dir)
 {
+  dir->fx += dir->vx;
+  dir->fy += dir->vy;
+  dir->dx = dir->fx;
+  dir->dy = dir->fy;
+  dir->fx -= dir->dx;
+  dir->fy -= dir->dy;
   switch(dir->next_bound){
     case 1: // Reach Left
-      if((circle->x+dir->dx)<circle->radius){
+      if((circle->x+dir->vx)<circle->radius){
         // From calc_next_dir, we are sure that dir->dx!=0
-        circle->y += (float)(circle->radius-circle->x)/dir->dx*dir->dy;
+        circle->y += (float)(circle->radius-circle->x)/dir->vx*dir->vy;
         circle->x = circle->radius;
         printf("Reach left %d %d.\n",circle->x,circle->y);
         if(dir->corner){
-          dir->dx = -dir->dx;
-          dir->dy = -dir->dy;
+          dir->vx = -dir->vx;
+          dir->vy = -dir->vy;
         }
         else
-          dir->dx = ABS(dir->dx);
+          dir->vx = ABS(dir->vx);
         calc_next_bound(circle,dir);
       }else{
         circle->x += dir->dx;
@@ -234,16 +270,16 @@ void update_circle(vga_ball_circle_t *circle, vga_ball_dir_t *dir)
       }
       break;
     case 2: // Reach Right
-      if((circle->x+dir->dx)>(640-circle->radius)){
-        circle->y += (640.0-circle->radius-circle->x)/dir->dx*dir->dy;
+      if((circle->x+dir->vx)>(640-circle->radius)){
+        circle->y += (640.0-circle->radius-circle->x)/dir->vx*dir->vy;
         circle->x = 640-circle->radius;
         printf("Reach right %d %d.\n",circle->x,circle->y);
         if(dir->corner){
-          dir->dx = -dir->dx;
-          dir->dy = -dir->dy;
+          dir->vx = -dir->vx;
+          dir->vy = -dir->vy;
         }
         else
-          dir->dx = -ABS(dir->dx);
+          dir->vx = -ABS(dir->vx);
         calc_next_bound(circle,dir);
       }else{
         circle->x += dir->dx;
@@ -251,16 +287,16 @@ void update_circle(vga_ball_circle_t *circle, vga_ball_dir_t *dir)
       }
       break;
     case 3: // Reach Top
-      if((circle->y+dir->dy)<circle->radius){
-        circle->x += (float)(circle->radius-circle->y)/dir->dy*dir->dx;
+      if((circle->y+dir->vy)<circle->radius){
+        circle->x += (float)(circle->radius-circle->y)/dir->vy*dir->vx;
         circle->y = circle->radius;
         printf("Reach top %d %d.\n",circle->x,circle->y);
         if(dir->corner){
-          dir->dx = -dir->dx;
-          dir->dy = -dir->dy;
+          dir->vx = -dir->vx;
+          dir->vy = -dir->vy;
         }
         else
-          dir->dy = ABS(dir->dy);
+          dir->vy = ABS(dir->vy);
         calc_next_bound(circle,dir);
       }else{
         circle->x += dir->dx;
@@ -268,17 +304,17 @@ void update_circle(vga_ball_circle_t *circle, vga_ball_dir_t *dir)
       }
       break;
     case 4: // Reach Bottom
-      if((circle->y+dir->dy)>(480-circle->radius)){
+      if((circle->y+dir->vy)>(480-circle->radius)){
         // From calc_next_dir, we are sure that dir->dx!=0
-        circle->x += (480.0-circle->radius-circle->y)/dir->dy*dir->dx;
+        circle->x += (480.0-circle->radius-circle->y)/dir->vy*dir->vx;
         circle->y = 480-circle->radius;
         printf("Reach bottom %d %d.\n",circle->x,circle->y);
         if(dir->corner){
-          dir->dx = -dir->dx;
-          dir->dy = -dir->dy;
+          dir->vx = -dir->vx;
+          dir->vy = -dir->vy;
         }
         else
-          dir->dy = -ABS(dir->dy);
+          dir->vy = -ABS(dir->vy);
         calc_next_bound(circle,dir);
       }else{
         circle->x += dir->dx;
@@ -295,6 +331,7 @@ int main(int argc,char **argv)
   struct arguments args;
   args.circle.radius=16;
   args.dir.dx=0;
+  args.dir.speed=1.5;
   args.dir.dy=0;
   args.c_random_color = 1;
   args.bg_color.red=args.bg_color.green=args.bg_color.blue=0xff;
@@ -332,7 +369,7 @@ int main(int argc,char **argv)
   vla.circle = circle;
   set_display(&vla);
   printf("initial state: ");
-  print_info();
+  //print_info();
 
   int i=0;
   int dr=5;
@@ -342,14 +379,14 @@ int main(int argc,char **argv)
       vla.c_color = colors[i % COLORS ];
     vla.circle = circle;
     set_display(&vla);
-    print_info();
+    //print_info();
     if(circle.radius>100)
       dr=-5;
     if(circle.radius<10)
       dr=5;
     //set_radius(&circle,&dir,circle.radius+dr);
     update_circle(&circle,&dir);
-    usleep(200000);
+    usleep(15000);
   }
   
   printf("VGA BALL Userspace program terminating\n");
